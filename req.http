@@ -1,0 +1,83 @@
+### Register User
+POST http://localhost:4000/api/common/register
+Content-Type: application/json
+
+{
+  "name": "karan",
+  "email": "karan123@gmail.com",
+  "password": "123456",
+  "role": "rider",
+  "phone": "9126547610"
+}
+
+### login user
+POST  http://localhost:4000/api/common/login
+Content-Type: application/json
+
+{
+    "email": "dhanvi123@gmail.com",
+    "password": "123456" 
+}
+
+### create order
+POST http://localhost:4000/api/admin/create-order
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBhYTNlMmU1NzAzM2I3YmMxZjMyY2QiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImRoYW52aTEyM0BnbWFpbC5jb20iLCJpYXQiOjE3NzkxMTU2NzYsImV4cCI6MTc3OTExNjU3Nn0.BIzHCz_AUnbfH1ziN7j-z1_tCNDYhNuwS0YEl0q6fDU
+
+{
+    "customerName":"mansi",
+    "address":"kaman,opposite to amul,twin towers"
+}
+
+###assign order to rider
+PUT http://localhost:4000/api/admin/assign-rider/6a0b26ac775ff595d1f49b3a
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBhYTNlMmU1NzAzM2I3YmMxZjMyY2QiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImRoYW52aTEyM0BnbWFpbC5jb20iLCJpYXQiOjE3NzkxMTU3ODMsImV4cCI6MTc3OTExNjY4M30.I15VVC7GkvEK5Jt4zTbbgqkI5bytHKXmuesSkzqzm-Q
+
+{
+    "riderId":"6a0b2644775ff595d1f49b36"
+}
+
+###get orders
+GET http://localhost:4000/api/rider/my-orders
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBiMjY0NDc3NWZmNTk1ZDFmNDliMzYiLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6ImthcmFuMTIzQGdtYWlsLmNvbSIsImlhdCI6MTc3OTExNTgyNSwiZXhwIjoxNzc5MTE2NzI1fQ.Q6TGqhlMitdU3LdqI6Ssyc44XH2JvtJORPaGb31XWuQ
+
+###accept or reject order
+PUT http://localhost:4000/api/rider/respond-order/6a0b26ac775ff595d1f49b3a
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBiMjY0NDc3NWZmNTk1ZDFmNDliMzYiLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6ImthcmFuMTIzQGdtYWlsLmNvbSIsImlhdCI6MTc3OTExNTg2OCwiZXhwIjoxNzc5MTE2NzY4fQ.6g3V6oPtsLo-xeWhcxciWeRHoRs1IknNcaT494pzyMQ
+
+{
+    "action":"accept"
+}
+
+###track order
+GET http://localhost:4000/api/admin/track/6a0b26ac775ff595d1f49b3a
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBhYTNlMmU1NzAzM2I3YmMxZjMyY2QiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImRoYW52aTEyM0BnbWFpbC5jb20iLCJpYXQiOjE3NzkxMTY1NzgsImV4cCI6MTc3OTExNzQ3OH0.HTbgPitkGKcSru3xMFg6Katni3slXSFwQePTgdxS7RA
+
+###update location
+PUT http://localhost:4000/api/rider/update-location/6a0b26ac775ff595d1f49b3a
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBiMjY0NDc3NWZmNTk1ZDFmNDliMzYiLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6ImthcmFuMTIzQGdtYWlsLmNvbSIsImlhdCI6MTc3OTExNjY1MCwiZXhwIjoxNzc5MTE3NTUwfQ.NQMZxIFoc-RaZ7fWeZEANlgcYT6mL8v-LAqY09BjuCE
+
+{
+   "lat":17.3850,
+   "lng":70.4867
+}
+
+###update order status
+PUT http://localhost:4000/api/rider/update-status/6a0b26ac775ff595d1f49b3a
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBiMjY0NDc3NWZmNTk1ZDFmNDliMzYiLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6ImthcmFuMTIzQGdtYWlsLmNvbSIsImlhdCI6MTc3OTExNjcwNSwiZXhwIjoxNzc5MTE3NjA1fQ.LUytBabxO6XOppK3jzIFJWI62LcLA09UHP83QUTo-w0
+
+{
+    "status":"dispatched"
+}
+
+###get all orders
+GET http://localhost:4000/api/admin/orders
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBhYTNlMmU1NzAzM2I3YmMxZjMyY2QiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImRoYW52aTEyM0BnbWFpbC5jb20iLCJpYXQiOjE3NzkxMTY3MzAsImV4cCI6MTc3OTExNzYzMH0.ZeEO1YDEOACEHRVYXuRKQ9xwBmj5LFoSkVfYbpBYJR0
+
+###get single order details
+GET http://localhost:4000/api/rider/order/6a0ab328ce39a815ac2b89ee
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTBhYWE3M2U1NzAzM2I3YmMxZjMyZDIiLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6InZhcnNoYTEyM0BnbWFpbC5jb20iLCJpYXQiOjE3NzkxMTI5NzIsImV4cCI6MTc3OTExMzg3Mn0.P3CMCfnfD4gNqTbjrCrhsvmAELuSEoECHGSFMPJOx5k
