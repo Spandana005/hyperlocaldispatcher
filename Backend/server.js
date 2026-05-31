@@ -30,10 +30,12 @@ app.set("io", io);
 
 // ✅ CORS middleware
 app.use(cors({
-  origin: true,
+  origin: [
+    "http://localhost:5173",
+    "https://hyperlocaldispatcher.vercel.app"
+  ],
   credentials: true
 }));
-
 // ✅ body parser
 app.use(exp.json());
 
