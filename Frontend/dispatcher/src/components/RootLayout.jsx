@@ -132,29 +132,26 @@ const RootLayout = () => {
 
 
   return (
-
-    <div className="min-h-screen flex flex-col bg-gray-100 relative">
-
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800 relative">
       {/* BLOCKED MODAL FOR RESTRICTED RIDERS */}
       {isBlocked && (
-        <div className="fixed inset-0 z-[99999] bg-slate-900/80 backdrop-blur-xl flex items-center justify-center p-6 select-none">
+        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 select-none">
           <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-red-100 text-center space-y-6"
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 text-center space-y-6"
           >
-            <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border-2 border-red-100 shadow-md">
-              <ShieldAlert className="w-10 h-10 animate-bounce" />
+            <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto border border-rose-100 shadow-sm">
+              <ShieldAlert className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-gray-900">Account Blocked</h2>
-              <p className="text-sm font-semibold text-gray-500">Account blocked by admin.</p>
-              <p className="text-xs text-gray-400 leading-relaxed font-medium">
-                Your rider dashboard and active tracking access privileges have been revoked due to administrative restrictions. You cannot perform any delivery operations.
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Rider Account Blocked</h2>
+              <p className="text-xs text-slate-400 leading-relaxed font-semibold">
+                Your delivery access privileges have been temporarily restricted by administrators. Active tracking is disabled.
               </p>
             </div>
-            <div className="bg-red-50/50 p-4 rounded-2xl border border-red-50 text-xs font-bold text-red-700 flex items-center justify-center gap-1.5">
-              <Clock className="w-4 h-4" /> Please contact support to resolve this issue.
+            <div className="bg-rose-50/50 p-4 rounded-2xl border border-rose-50 text-xs font-bold text-rose-700 flex items-center justify-center gap-1.5">
+              <Clock className="w-4 h-4" /> Please contact operations team to resolve.
             </div>
             <button 
               onClick={() => {
@@ -162,49 +159,33 @@ const RootLayout = () => {
                 stopTracking();
                 logout();
               }}
-              className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md"
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md"
             >
-              Sign Out
+              Sign Out Account
             </button>
           </motion.div>
         </div>
       )}
 
-      {/* HEADER ALWAYS */}
-
+      {/* HEADER TOP BAR */}
       <Header />
 
+      {/* MAIN LAYOUT */}
+      <div className="flex flex-1 relative">
+        {/* SIDEBAR NAVIGATION */}
+        {user && !hideSidebar && <Sidebar />}
 
-      {/* MAIN */}
-
-      <div className="flex flex-1">
-
-        {/* SIDEBAR ONLY AFTER LOGIN */}
-
-        {
-          user &&
-          !hideSidebar &&
-          <Sidebar />
-        }
-
-
-        {/* PAGE */}
-
-        <main className="flex-1 p-5 overflow-y-auto">
-
-          <Outlet />
-
+        {/* PAGE OUTLET */}
+        <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-70px)] bg-slate-50/30">
+          <div className="max-w-[1600px] mx-auto w-full h-full">
+            <Outlet />
+          </div>
         </main>
-
       </div>
 
-
-      {/* FOOTER ALWAYS */}
-
+      {/* FOOTER */}
       <Footer />
-
     </div>
-
   );
 
 };

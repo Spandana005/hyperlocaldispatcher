@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background Glow Path -->
+  <path d="M20 75 C 35 75, 45 45, 60 45 C 75 45, 80 25, 80 25" stroke="url(#route-glow)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.15"/>
+  
+  <!-- Active Route Path -->
+  <path d="M20 75 C 35 75, 45 45, 60 45 C 75 45, 80 25, 80 25" stroke="url(#route-gradient)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4"/>
+  
+  <!-- Speed lines -->
+  <line x1="12" y1="71" x2="5" y2="71" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+  <line x1="15" y1="77" x2="7" y2="77" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Location Pin -->
+  <g transform="translate(80, 25)">
+    <ellipse cx="0" cy="12" rx="6" ry="2" fill="#0F172A" opacity="0.3"/>
+    <path d="M0 -15 C -8 -15, -10 -7, 0 10 C 10 -7, 8 -15, 0 -15 Z" fill="url(#pin-gradient)" stroke="#FFFFFF" stroke-width="2"/>
+    <circle cx="0" cy="-6" r="3.5" fill="#FFFFFF"/>
+  </g>
+
+  <defs>
+    <linearGradient id="route-gradient" x1="20" y1="75" x2="80" y2="25" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="route-glow" x1="20" y1="75" x2="80" y2="25" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="pin-gradient" x1="0" y1="-15" x2="0" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+</svg>
