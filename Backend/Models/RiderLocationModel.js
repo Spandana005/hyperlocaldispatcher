@@ -8,6 +8,11 @@ const riderLocationSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      default: null,
+    },
     latitude: {
       type: Number,
       required: true,
@@ -27,7 +32,7 @@ const riderLocationSchema = new mongoose.Schema(
   }
 );
 
-// Optimize query path
 riderLocationSchema.index({ riderId: 1 });
+riderLocationSchema.index({ shopId: 1 });
 
 export const RiderLocationModel = mongoose.model("RiderLocation", riderLocationSchema);

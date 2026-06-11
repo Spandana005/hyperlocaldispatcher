@@ -1,7 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-} from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -12,8 +10,19 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
+import useAuthStore from "../store/authstore";
 import API, { getShopLocation } from "../api";
+import { 
+  Package, 
+  User, 
+  Phone, 
+  MapPin, 
+  Search, 
+  Navigation, 
+  PlusCircle, 
+  Check 
+} from "lucide-react";
+import { toast } from "react-hot-toast";
 
 // ============================
 // FIX LEAFLET DEFAULT ICON & DEFINE SHOP ICON
@@ -56,31 +65,54 @@ const ChangeMapCenter = ({ center }) => {
 };
 
 const CreateOrder = () => {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [shopPosition, setShopPosition] = useState(null);
+  const [shopDetails, setShopDetails] = useState(null);
   const [mapSearchQuery, setMapSearchQuery] = useState("");
   const [isSearchingMap, setIsSearchingMap] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Load Admin's Shop Location
+  const [formData, setFormData] = useState({
+    customerName: "",
+    phone: "",
+    pincode: "",
+    city: "",
+    state: "",
+    area: "",
+    building: "",
+    landmark: "",
+    addressType: "Home",
+    orderDetails: "",
+  });
+
+  // Load Shop Location
   useEffect(() => {
     const fetchShopLocation = async () => {
       try {
-        const response = await getShopLocation();
+        const response = user.role === "shop_owner"
+          ? await API.get("/api/shop-owner/shop")
+          : await getShopLocation();
+
         if (response.data?.success && response.data?.shop) {
-          const { latitude, longitude } = response.data.shop;
-          if (latitude && longitude) {
-            setShopPosition({ lat: latitude, lng: longitude });
-            // Pre-fill and center map at shop location as default dispatcher
-            setSelectedPosition({ lat: latitude, lng: longitude });
-            handleReverseGeocode(latitude, longitude);
+          const shop = response.data.shop;
+          setShopDetails(shop);
+          if (shop.latitude && shop.longitude) {
+            setShopPosition({ lat: shop.latitude, lng: shop.longitude });
+            setSelectedPosition({ lat: shop.latitude, lng: shop.longitude });
+            handleReverseGeocode(shop.latitude, shop.longitude);
           }
         }
       } catch (err) {
         console.error("Failed to load shop location:", err);
       }
     };
-    fetchShopLocation();
-  }, []);
+    if (user) {
+      fetchShopLocation();
+    }
+  }, [user]);
 
   const handleReverseGeocode = async (lat, lng) => {
     try {
@@ -127,476 +159,305 @@ const CreateOrder = () => {
         setSelectedPosition({ lat, lng });
         handleReverseGeocode(lat, lng);
       } else {
-        alert("Location not found.");
+        toast.error("Location not found on map.");
       }
     } catch (err) {
       console.error(err);
-      alert("Search failed.");
+      toast.error("Map search failed.");
     } finally {
       setIsSearchingMap(false);
     }
   };
 
-  const [formData, setFormData] = useState({
-
-    customerName: "",
-  
-    phone: "",
-  
-    pincode: "",
-  
-    city: "",
-  
-    state: "",
-  
-    area: "",
-  
-    building: "",
-  
-    landmark: "",
-  
-    addressType: "Home",
-  
-    orderDetails: "",
-  
-  });
-
-  // =========================
-  // HANDLE CHANGE
-  // =========================
   const handleChange = (e) => {
-
     setFormData({
-
       ...formData,
-
-      [e.target.name]:
-        e.target.value,
-
+      [e.target.name]: e.target.value,
     });
-
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedPosition) {
+      toast.error("Please select a delivery location on the map");
+      return;
+    }
 
-  // =========================
-  // HANDLE SUBMIT
-  // =========================
-  const handleSubmit =
-    async (e) => {
+    setSubmitting(true);
+    try {
+      const latitude = selectedPosition.lat;
+      const longitude = selectedPosition.lng;
 
-      e.preventDefault();
+      const payload = {
+        customerName: formData.customerName,
+        phone: formData.phone,
+        address: {
+          pincode: formData.pincode,
+          city: formData.city,
+          state: formData.state,
+          area: formData.area,
+          building: formData.building,
+          landmark: formData.landmark,
+          addressType: formData.addressType,
+        },
+        orderDetails: formData.orderDetails,
+        latitude,
+        longitude,
+      };
 
-      try {
-
-        // CONVERT ADDRESS TO COORDINATES
-        if (!selectedPosition) {
-
-          alert("Please select delivery location on map");
-        
+      // Admin requires shopId in payload
+      if (user.role === "admin") {
+        if (!shopDetails?._id) {
+          toast.error("No active shop linked to dispatch order");
+          setSubmitting(false);
           return;
-        
         }
-        
-        const latitude = selectedPosition.lat;
-        
-        const longitude = selectedPosition.lng;
-        
+        payload.shopId = shopDetails._id;
+      }
 
+      const url = user.role === "shop_owner"
+        ? "/api/shop-owner/orders"
+        : "/api/orders";
 
-        // CREATE ORDER
-        await API.post(
+      await API.post(url, payload);
 
-          "/api/admin/create-order",
+      toast.success("Order dispatched to nearby riders!");
 
-          {
-
-            customerName:
-              formData.customerName,
-
-            phone:
-              formData.phone,
-
-            address: {
-
-  pincode:
-    formData.pincode,
-
-  city:
-    formData.city,
-
-  state:
-    formData.state,
-
-  area:
-    formData.area,
-
-  building:
-    formData.building,
-
-  landmark:
-    formData.landmark,
-
-  addressType:
-    formData.addressType,
-
-},
-
-            // NEW
-           
-            orderDetails:
-              formData.orderDetails,
-
-
-            // DELIVERY LOCATION
-            latitude,
-
-            longitude,
-
-          }
-
-        );
-
-
-        alert(
-          "Order sent to nearby riders"
-        );
-
-
-        // RESET FORM
-        setFormData({
-
-          customerName: "",
-        
-          phone: "",
-        
-          pincode: "",
-        
-          city: "",
-        
-          state: "",
-        
-          area: "",
-        
-          building: "",
-        
-          landmark: "",
-        
-          addressType: "Home",
-        
-          orderDetails: "",
-        
-        });
+      // Reset form
+      setFormData({
+        customerName: "",
+        phone: "",
+        pincode: "",
+        city: "",
+        state: "",
+        area: "",
+        building: "",
+        landmark: "",
+        addressType: "Home",
+        orderDetails: "",
+      });
+      if (shopPosition) {
+        setSelectedPosition(shopPosition);
+        handleReverseGeocode(shopPosition.lat, shopPosition.lng);
+      } else {
         setSelectedPosition(null);
-
       }
 
-      catch (error) {
-
-        console.log(error);
-
-        alert(
-
-          error.response?.data?.message ||
-
-          "Something went wrong"
-
-        );
-
-      }
-
-    };
-
+      // Navigate back to orders list
+      navigate(user.role === "shop_owner" ? "/shop/orders" : "/admin/orders");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to create order");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-
-    <div className="p-6">
-
-      {/* HEADING */}
-      <div className="mb-8">
-
-        <h1
-          className="
-          text-4xl
-          font-bold
-          text-blue-600
-          "
-        >
-
-          Create Order
-
-        </h1>
-
-        <p
-          className="
-          text-gray-600
-          mt-2
-          "
-        >
-
-          Create delivery orders
-          for nearby riders.
-
-        </p>
-
+    <div className="space-y-6 animate-fadeIn">
+      {/* Page Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <PlusCircle className="w-8 h-8 text-blue-600" />
+            Create Dispatch Order
+          </h1>
+          <p className="text-slate-500 text-xs font-semibold mt-1">
+            Dispatch orders immediately to available riders. Fill in customer details and pin their delivery spot.
+          </p>
+        </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Form Panel */}
+        <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <h2 className="text-lg font-black text-slate-850 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
+            <Package className="w-5 h-5 text-slate-400" />
+            Order Details
+          </h2>
 
-      {/* FORM */}
-      <div
-        className="
-        bg-white
-        shadow-xl
-        rounded-2xl
-        p-8
-        max-w-3xl
-        "
-      >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Customer Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5" /> Customer Name
+                </label>
+                <input
+                  type="text"
+                  name="customerName"
+                  placeholder="e.g. John Doe"
+                  value={formData.customerName}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-slate-50"
+                  required
+                />
+              </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="
-          flex
-          flex-col
-          gap-6
-          "
-        >
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450 flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5" /> Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="e.g. 98765 43210"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-slate-50"
+                  required
+                />
+              </div>
+            </div>
 
-          {/* CUSTOMER NAME */}
-          <div>
+            {/* Address fields */}
+            <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 space-y-4">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivery Address Details</span>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">Flat / Building Name</label>
+                  <input
+                    type="text"
+                    name="building"
+                    placeholder="Plot 10, Flat 3B"
+                    value={formData.building}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                    required
+                  />
+                </div>
 
-            <label
-              className="
-              block
-              mb-2
-              font-semibold
-              "
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">Pincode</label>
+                  <input
+                    type="text"
+                    name="pincode"
+                    placeholder="500081"
+                    value={formData.pincode}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-450">Locality / Area / Street</label>
+                <input
+                  type="text"
+                  name="area"
+                  placeholder="Gachibowli, Telecom Nagar"
+                  value={formData.area}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="Hyderabad"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">State</label>
+                  <input
+                    type="text"
+                    name="state"
+                    placeholder="Telangana"
+                    value={formData.state}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">Landmark (Optional)</label>
+                  <input
+                    type="text"
+                    name="landmark"
+                    placeholder="e.g. Near HDFC Bank"
+                    value={formData.landmark}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-450">Address Type</label>
+                  <select
+                    name="addressType"
+                    value={formData.addressType}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white cursor-pointer"
+                  >
+                    <option value="Home">Home</option>
+                    <option value="Office">Office</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Description */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Items Description</label>
+              <textarea
+                name="orderDetails"
+                placeholder="List items to deliver (e.g. 2x Milk Packets, 1x Bread)"
+                value={formData.orderDetails}
+                onChange={handleChange}
+                className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-slate-50 h-20 resize-none"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
             >
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>Dispatching Order...</span>
+                </>
+              ) : (
+                <>
+                  <span>Dispatch Order</span>
+                  <Check className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
 
-              Customer Name
+        {/* Map Panel */}
+        <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+          <h2 className="text-lg font-black text-slate-850 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-slate-400" />
+            Set Customer Location
+          </h2>
 
-            </label>
-
-            <input
-              type="text"
-              name="customerName"
-              placeholder="
-              Enter Customer Name
-              "
-              value={
-                formData.customerName
-              }
-              onChange={handleChange}
-              className="
-              w-full
-              border
-              p-3
-              rounded-lg
-              outline-none
-              "
-              required
-            />
-
-          </div>
-
-
-          {/* PHONE */}
-          <div>
-
-            <label
-              className="
-              block
-              mb-2
-              font-semibold
-              "
-            >
-
-              Phone Number
-
-            </label>
-
-            <input
-              type="tel"
-              name="phone"
-              placeholder="
-              Enter Phone Number
-              "
-              value={
-                formData.phone
-              }
-              onChange={handleChange}
-              className="
-              w-full
-              border
-              p-3
-              rounded-lg
-              outline-none
-              "
-              required
-            />
-
-          </div>
-
-
-          {/* ADDRESS INFO */}
-<div className="border rounded-2xl p-6 bg-gray-50">
-
-<h2 className="text-2xl font-bold mb-6">
-  Address Info
-</h2>
-
-<div className="grid md:grid-cols-2 gap-5">
-
-  {/* PINCODE */}
-  <div>
-    <label className="block mb-2 font-semibold">
-      Pincode
-    </label>
-
-    <input
-      type="text"
-      name="pincode"
-      value={formData.pincode}
-      onChange={handleChange}
-      placeholder="500081"
-      className="w-full border p-3 rounded-xl"
-      required
-    />
-  </div>
-
-  {/* CITY */}
-  <div>
-    <label className="block mb-2 font-semibold">
-      City
-    </label>
-
-    <input
-      type="text"
-      name="city"
-      value={formData.city}
-      onChange={handleChange}
-      placeholder="Hyderabad"
-      className="w-full border p-3 rounded-xl"
-      required
-    />
-  </div>
-
-  {/* STATE */}
-  <div className="md:col-span-2">
-    <label className="block mb-2 font-semibold">
-      State
-    </label>
-
-    <input
-      type="text"
-      name="state"
-      value={formData.state}
-      onChange={handleChange}
-      placeholder="Telangana"
-      className="w-full border p-3 rounded-xl"
-      required
-    />
-  </div>
-
-  {/* AREA */}
-  <div className="md:col-span-2">
-    <label className="block mb-2 font-semibold">
-      Locality / Area / Street
-    </label>
-
-    <textarea
-      name="area"
-      value={formData.area}
-      onChange={handleChange}
-      placeholder="Pocharam, Srinivas Colony"
-      className="w-full border p-3 rounded-xl h-24"
-      required
-    />
-  </div>
-
-  {/* BUILDING */}
-  <div className="md:col-span-2">
-    <label className="block mb-2 font-semibold">
-      Flat no / Building Name
-    </label>
-
-    <input
-      type="text"
-      name="building"
-      value={formData.building}
-      onChange={handleChange}
-      placeholder="Plot No 32"
-      className="w-full border p-3 rounded-xl"
-      required
-    />
-  </div>
-
-  {/* LANDMARK */}
-  <div className="md:col-span-2">
-    <label className="block mb-2 font-semibold">
-      Landmark (Optional)
-    </label>
-
-    <input
-      type="text"
-      name="landmark"
-      value={formData.landmark}
-      onChange={handleChange}
-      placeholder="Opposite 90s Cafe"
-      className="w-full border p-3 rounded-xl"
-    />
-  </div>
-
-</div>
-
-</div>
-
-          {/* ORDER DETAILS */}
-          <div>
-
-            <label
-              className="
-              block
-              mb-2
-              font-semibold
-              "
-            >
-
-              Order Details
-
-            </label>
-
-            <textarea
-              name="orderDetails"
-              placeholder="
-              Enter Order Details
-              "
-              value={
-                formData.orderDetails
-              }
-              onChange={handleChange}
-              className="
-              w-full
-              border
-              p-3
-              rounded-lg
-              outline-none
-              h-28
-              "
-              required
-            />
-
-          </div>
-
-          <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-4">
-              Select Delivery Location
-            </h2>
-
-            {/* Address / Landmark Map Search */}
-            <div className="flex gap-2 mb-4">
+          {/* Search location bar */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
-                placeholder="Search location/address or landmark on map..."
+                placeholder="Search street, area or landmark..."
                 value={mapSearchQuery}
                 onChange={(e) => setMapSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -605,122 +466,99 @@ const CreateOrder = () => {
                     handleSearchMapLocation();
                   }
                 }}
-                className="w-full border p-3 rounded-xl text-sm"
+                className="w-full border border-slate-200 p-3.5 pl-10 rounded-xl text-xs outline-none bg-slate-50"
               />
-              <button
-                type="button"
-                onClick={handleSearchMapLocation}
-                disabled={isSearchingMap}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-xl text-xs disabled:bg-blue-400 shrink-0"
-              >
-                {isSearchingMap ? "Searching..." : "Search Map"}
-              </button>
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
             </div>
-
-            {/* Interactive Leaflet Map */}
-            <div className="border rounded-2xl overflow-hidden h-[350px] relative z-10">
-              <MapContainer
-                center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : (shopPosition ? [shopPosition.lat, shopPosition.lng] : [17.4483, 78.3915])}
-                zoom={14}
-                scrollWheelZoom={true}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  attribution='&copy; OpenStreetMap contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
-                {/* Shop Location Marker */}
-                {shopPosition && (
-                  <Marker
-                    position={[shopPosition.lat, shopPosition.lng]}
-                    icon={shopIcon}
-                  >
-                    <Popup>
-                      <div className="p-1 text-center">
-                        <p className="font-extrabold text-red-600 text-xs tracking-wider uppercase">🏪 Admin Shop</p>
-                        <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Local Dispatch Point</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-
-                {selectedPosition && (
-                  <Marker
-                    position={[selectedPosition.lat, selectedPosition.lng]}
-                    draggable={true}
-                    eventHandlers={{
-                      dragend: (e) => {
-                        const marker = e.target;
-                        const position = marker.getLatLng();
-                        setSelectedPosition({ lat: position.lat, lng: position.lng });
-                        handleReverseGeocode(position.lat, position.lng);
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div className="p-1 text-center">
-                        <p className="font-extrabold text-blue-600 text-xs tracking-wider uppercase">📍 Customer Location</p>
-                        <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Drag to reposition delivery pin</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-                <MapClickHandler onMapClick={([lat, lng]) => {
-                  setSelectedPosition({ lat, lng });
-                  handleReverseGeocode(lat, lng);
-                }} />
-                <ChangeMapCenter center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : null} />
-              </MapContainer>
-            </div>
-
             <button
               type="button"
-              onClick={() => {
-                navigator.geolocation.getCurrentPosition(
-                  (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    setSelectedPosition({ lat, lng });
-                    handleReverseGeocode(lat, lng);
-                  },
-                  (error) => {
-                    console.error("GPS error:", error);
-                  },
-                  { enableHighAccuracy: true }
-                );
-              }}
-              className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs"
+              onClick={handleSearchMapLocation}
+              disabled={isSearchingMap}
+              className="bg-slate-950 hover:bg-slate-850 text-white font-bold px-4 py-3 rounded-xl text-xs disabled:bg-slate-450 shrink-0 cursor-pointer"
             >
-              📍 Locate Me & Auto-Fill Address
+              {isSearchingMap ? "Searching..." : "Search"}
             </button>
           </div>
 
+          {/* Map */}
+          <div className="border border-slate-150 rounded-2xl overflow-hidden h-[380px] relative z-10 shadow-sm">
+            <MapContainer
+              center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : (shopPosition ? [shopPosition.lat, shopPosition.lng] : [17.4483, 78.3915])}
+              zoom={14}
+              scrollWheelZoom={true}
+              className="h-full w-full"
+            >
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
 
-          {/* SUBMIT */}
+              {/* Shop Marker */}
+              {shopPosition && (
+                <Marker position={[shopPosition.lat, shopPosition.lng]} icon={shopIcon}>
+                  <Popup>
+                    <div className="p-1 text-center">
+                      <p className="font-extrabold text-red-650 text-xs uppercase">🏪 Dispatch Center</p>
+                      <p className="text-[9px] text-gray-500 font-semibold mt-0.5">{shopDetails?.shopName}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+
+              {/* Customer Marker */}
+              {selectedPosition && (
+                <Marker
+                  position={[selectedPosition.lat, selectedPosition.lng]}
+                  draggable={true}
+                  eventHandlers={{
+                    dragend: (e) => {
+                      const marker = e.target;
+                      const position = marker.getLatLng();
+                      setSelectedPosition({ lat: position.lat, lng: position.lng });
+                      handleReverseGeocode(position.lat, position.lng);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="p-1 text-center">
+                      <p className="font-extrabold text-blue-600 text-xs uppercase">📍 Customer Location</p>
+                      <p className="text-[9px] text-gray-500 font-semibold mt-0.5">Drag to adjust delivery spot</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+
+              <MapClickHandler onMapClick={([lat, lng]) => {
+                setSelectedPosition({ lat, lng });
+                handleReverseGeocode(lat, lng);
+              }} />
+              <ChangeMapCenter center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : null} />
+            </MapContainer>
+          </div>
+
           <button
-            type="submit"
-            className="
-            bg-blue-600
-            text-white
-            py-3
-            rounded-xl
-            hover:bg-blue-700
-            "
+            type="button"
+            onClick={() => {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const lat = position.coords.latitude;
+                  const lng = position.coords.longitude;
+                  setSelectedPosition({ lat, lng });
+                  handleReverseGeocode(lat, lng);
+                },
+                (error) => console.error(error),
+                { enableHighAccuracy: true }
+              );
+            }}
+            className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs border border-slate-200 cursor-pointer"
           >
-
-            Create Order
-
+            <Navigation className="w-3.5 h-3.5 text-blue-600" />
+            Auto-fill My Current Location
           </button>
-
-        </form>
-
+        </div>
       </div>
-
     </div>
-
   );
-
 };
 
 export default CreateOrder;

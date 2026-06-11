@@ -24,6 +24,14 @@ import RiderDashboard from "./components/RiderDashboard";
 import MyOrders from "./components/MyOrders"
 import Earnings from "./components/Earnings";
 
+// Onboarding & Shop Owner Pages
+import CreateShop from "./components/CreateShop";
+import JoinShop from "./components/JoinShop";
+import PendingApprovalPage from "./components/PendingApprovalPage";
+import ShopDashboard from "./components/ShopDashboard";
+import ShopOrders from "./components/ShopOrders";
+import ShopRiders from "./components/ShopRiders";
+
 // Protected Route
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -139,6 +147,82 @@ function App() {
           element: (
             <ProtectedRoute role="rider">
               <Earnings />
+            </ProtectedRoute>
+          ),
+        },
+
+        // Onboarding Routes (Pending states)
+        {
+          path: "create-shop",
+          element: (
+            <ProtectedRoute role="shop_owner" allowPending={true}>
+              <CreateShop />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "join-shop",
+          element: (
+            <ProtectedRoute role="rider" allowPending={true}>
+              <JoinShop />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "pending-approval",
+          element: (
+            <ProtectedRoute role="rider" allowPending={true}>
+              <PendingApprovalPage />
+            </ProtectedRoute>
+          ),
+        },
+
+        // Shop Owner Routes
+        {
+          path: "shop/dashboard",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopDashboard />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/orders",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopOrders />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/create-order",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <CreateOrder />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/riders",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopRiders />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/rider-requests",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopRiders />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/settings",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopSetup />
             </ProtectedRoute>
           ),
         },

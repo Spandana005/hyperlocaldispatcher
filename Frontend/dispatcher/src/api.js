@@ -1,10 +1,17 @@
 import axios from "axios";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  (import.meta.env.DEV
+    ? "http://localhost:4000"
+    : "https://hyperlocaldispatcher.onrender.com");
+
+console.log("[API DEBUG] Resolved Axios baseURL:", API_BASE_URL);
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
-
 
 // ==========================
 // ADD TOKEN AUTOMATICALLY
@@ -14,33 +21,22 @@ API.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
-      console.log(`[API REQUEST INTERCEPTOR] Attached Bearer token to request: ${config.method.toUpperCase()} ${config.url}`);
-    } else {
-      console.log(`[API REQUEST INTERCEPTOR] No token in localStorage for request: ${config.method.toUpperCase()} ${config.url}`);
     }
     return config;
   },
-  (error) => {
-    console.error("[API REQUEST INTERCEPTOR] Request configuration error:", error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-
 // ==========================
-// HANDLE BLOCKING & SILENT REFRESH GLOBALLY
+// HANDLE BLOCKING & SILENT REFRESH
 // ==========================
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-  console.log(`[API RESPONSE INTERCEPTOR] Processing failed queue of size ${failedQueue.length}. Success: ${!!token}`);
   failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+    if (error) prom.reject(error);
+    else prom.resolve(token);
   });
   failedQueue = [];
 };
@@ -50,31 +46,23 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If there is no response object (like network loss)
     if (!error.response) {
-      console.error(`[API RESPONSE INTERCEPTOR] Network error occurred or server offline for request: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`);
       return Promise.reject(error);
     }
 
-    console.warn(`[API RESPONSE INTERCEPTOR] Error status ${error.response.status} returned for: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`);
-
-    // 1. Account Blocked
+    // Account Blocked
     if (error.response?.status === 403 && error.response?.data?.isBlocked) {
-      console.warn("[API RESPONSE INTERCEPTOR] Account is blocked. Dispatching blocked event.");
       window.dispatchEvent(new CustomEvent("rider-blocked"));
       return Promise.reject(error);
     }
 
-    // 2. Token Expired (401 Unauthorized)
+    // Token Expired (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // If refresh API itself fails, don't loop
       if (originalRequest.url === "/api/auth/refresh") {
-        console.error("[API RESPONSE INTERCEPTOR] Token refresh failed directly. Rejecting request.");
         return Promise.reject(error);
       }
 
       if (isRefreshing) {
-        console.log(`[API RESPONSE INTERCEPTOR] Silent refresh is already in progress. Queuing request: ${originalRequest.url}`);
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -82,27 +70,22 @@ API.interceptors.response.use(
             originalRequest.headers["Authorization"] = `Bearer ${token}`;
             return API(originalRequest);
           })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+          .catch((err) => Promise.reject(err));
       }
 
-      console.log(`[API RESPONSE INTERCEPTOR] 401 Unauthorized detected for ${originalRequest.url}. Starting silent refresh...`);
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
         const refreshResponse = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+          `${API_BASE_URL}/api/auth/refresh`,
           {},
           { withCredentials: true }
         );
         const newToken = refreshResponse.data.token;
 
         if (newToken) {
-          console.log("[API RESPONSE INTERCEPTOR] Silent refresh succeeded. Updating token in localStorage and headers.");
           localStorage.setItem("token", newToken);
-          // Sync backend profile to localStorage if returned
           if (refreshResponse.data.user) {
             localStorage.setItem("user", JSON.stringify(refreshResponse.data.user));
           }
@@ -112,11 +95,9 @@ API.interceptors.response.use(
           processQueue(null, newToken);
           isRefreshing = false;
 
-          console.log(`[API RESPONSE INTERCEPTOR] Retrying original request: ${originalRequest.url}`);
           return API(originalRequest);
         }
       } catch (refreshErr) {
-        console.error("[API RESPONSE INTERCEPTOR] Silent refresh failed. Wiping tokens and logging out user.", refreshErr.message);
         processQueue(refreshErr, null);
         isRefreshing = false;
 
@@ -133,166 +114,82 @@ API.interceptors.response.use(
   }
 );
 
-
-
+// ==========================
+// SHOP APIs (legacy)
+// ==========================
+export const saveShopLocation = (data) => API.post("/api/shop/location", data);
+export const getShopLocation = () => API.get("/api/shop/location");
 
 // ==========================
-// SHOP APIs
+// ADMIN APIs (legacy)
 // ==========================
-
-// SAVE SHOP LOCATION
-export const saveShopLocation =
-  async (data) => {
-
-    return API.post(
-
-      "/api/shop/location",
-
-      data
-
-    );
-
-};
-
-
-// GET SHOP LOCATION
-export const getShopLocation =
-  async () => {
-
-    return API.get(
-
-      "/api/shop/location"
-
-    );
-
-};
-
-
+export const createOrder = (data) => API.post("/api/admin/create-order", data);
+export const trackOrder = (orderId) => API.get(`/api/admin/track/${orderId}`);
 
 // ==========================
-// ADMIN APIs
+// ADMIN APIs (new)
 // ==========================
+export const getAdminStats = () => API.get("/api/admin/stats");
+export const getAdminUsers = () => API.get("/api/admin/users");
+export const getAdminShops = () => API.get("/api/admin/shops");
+export const getAdminRiders = () => API.get("/api/admin/riders");
+export const getAdminOrders = (params) => API.get("/api/admin/orders", { params });
+export const blockUser = (userId) => API.patch(`/api/admin/block/${userId}`);
+export const unblockUser = (userId) => API.patch(`/api/admin/unblock/${userId}`);
 
-// CREATE ORDER
-export const createOrder =
-  async (data) => {
+// ==========================
+// SHOP OWNER APIs
+// ==========================
+export const createShop = (data) => API.post("/api/shop-owner/shop", data);
+export const getMyShop = () => API.get("/api/shop-owner/shop");
+export const updateMyShop = (data) => API.put("/api/shop-owner/shop", data);
+export const getMyShopCode = () => API.get("/api/shop-owner/shop-code");
+export const getShopOwnerStats = () => API.get("/api/shop-owner/stats");
+export const getShopOwnerRiders = () => API.get("/api/shop-owner/riders");
+export const getRiderRequests = (status = "Pending") =>
+  API.get("/api/shop-owner/rider-requests", { params: { status } });
+export const approveRider = (riderId) =>
+  API.patch(`/api/shop-owner/rider/${riderId}/approve`);
+export const rejectRider = (riderId) =>
+  API.patch(`/api/shop-owner/rider/${riderId}/reject`);
+export const getShopOwnerOrders = (params) =>
+  API.get("/api/shop-owner/orders", { params });
+export const createShopOwnerOrder = (data) =>
+  API.post("/api/shop-owner/orders", data);
+export const assignRiderToOrder = (orderId, riderId) =>
+  API.put(`/api/shop-owner/orders/assign/${orderId}`, { riderId });
+export const deleteShopOwnerOrder = (orderId) =>
+  API.delete(`/api/shop-owner/orders/${orderId}`);
 
-    return API.post(
-
-      "/api/admin/create-order",
-
-      data
-
-    );
-
-};
-
-
-// TRACK ORDER
-export const trackOrder =
-  async (orderId) => {
-
-    return API.get(
-
-      `/api/admin/track/${orderId}`
-
-    );
-
-};
-
-
+// ==========================
+// ORDER APIs (shared)
+// ==========================
+export const getAllOrders = (params) => API.get("/api/orders", { params });
+export const updateOrderStatus = (orderId, status) =>
+  API.put(`/api/orders/status/${orderId}`, { status });
 
 // ==========================
 // RIDER APIs
 // ==========================
+export const getAvailableOrders = () => API.get("/api/rider/available-orders");
+export const getMyOrders = () => API.get("/api/rider/my-orders");
+export const respondOrder = (orderId, action) =>
+  API.put(`/api/rider/respond-order/${orderId}`, { action });
+export const updateRiderOrderStatus = (orderId, status) =>
+  API.put(`/api/rider/update-status/${orderId}`, { status });
+export const updateLiveLocation = (orderId, data) =>
+  API.put(`/api/rider/update-location/${orderId}`, data);
+export const joinShop = (shopCode) => API.post("/api/rider/join-shop", { shopCode });
 
-// GET AVAILABLE ORDERS
-export const getAvailableOrders =
-  async () => {
+// ==========================
+// LOCATION APIs
+// ==========================
+export const updateLocationAPI = (data) => API.post("/api/location/update", data);
+export const deactivateLocation = () => API.post("/api/location/deactivate");
 
-    return API.get(
-
-      "/api/rider/available-orders"
-
-    );
-
-};
-
-
-// GET MY ORDERS
-export const getMyOrders =
-  async () => {
-
-    return API.get(
-
-      "/api/rider/my-orders"
-
-    );
-
-};
-
-
-// ACCEPT / REJECT ORDER
-export const respondOrder =
-  async (
-
-    orderId,
-
-    action
-
-  ) => {
-
-    return API.put(
-
-      `/api/rider/respond-order/${orderId}`,
-
-      { action }
-
-    );
-
-};
-
-
-// UPDATE ORDER STATUS
-export const updateOrderStatus =
-  async (
-
-    orderId,
-
-    status
-
-  ) => {
-
-    return API.put(
-
-      `/api/rider/update-status/${orderId}`,
-
-      { status }
-
-    );
-
-};
-
-
-// UPDATE LIVE LOCATION
-export const updateLiveLocation =
-  async (
-
-    orderId,
-
-    data
-
-  ) => {
-
-    return API.put(
-
-      `/api/rider/update-location/${orderId}`,
-
-      data
-
-    );
-
-};
-
+// ==========================
+// EARNINGS APIs
+// ==========================
+export const getEarnings = (riderId) => API.get(`/api/earnings/${riderId}`);
 
 export default API;

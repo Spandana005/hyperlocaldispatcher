@@ -36,6 +36,8 @@ const useAuthStore = create((set, get) => ({
   register: async (formData) => {
     try {
       console.log("[AUTH STORE] Registering new account with body:", formData.email);
+      console.log("[AUTH STORE] Axios baseURL:", API.defaults.baseURL);
+      console.log("[AUTH STORE] Full register URL:", `${API.defaults.baseURL}/api/auth/register`);
       const response = await API.post(
         "/api/auth/register",
         formData

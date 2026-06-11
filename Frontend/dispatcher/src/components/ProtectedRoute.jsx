@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import useAuthStore from "../store/authstore";
 
-const ProtectedRoute = ({ children, role }) => {
+const ProtectedRoute = ({ children, role, allowPending = false }) => {
 
   // Zustand Store
   const user = useAuthStore((state) => state.user);
@@ -31,6 +31,25 @@ const ProtectedRoute = ({ children, role }) => {
   // If Wrong Role
   if (user.role !== role) {
     return <Navigate to="/" replace />;
+  }
+
+  // Check onboarding status if not bypassed
+  if (!allowPending) {
+    if (user.role === "rider") {
+      const rp = user.riderProfile;
+      if (!rp || !rp.shopId) {
+        return <Navigate to="/join-shop" replace />;
+      }
+      if (rp.approvalStatus !== "Approved") {
+        return <Navigate to="/pending-approval" replace />;
+      }
+    }
+
+    if (user.role === "shop_owner") {
+      if (!user.shopProfile) {
+        return <Navigate to="/create-shop" replace />;
+      }
+    }
   }
 
   // If Authorized

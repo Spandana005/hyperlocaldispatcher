@@ -11,6 +11,7 @@ import authAPI from './APIs/authAPI.js';
 import orderAPI from './APIs/orderAPI.js';
 import locationAPI from './APIs/locationAPI.js';
 import earningsAPI from './APIs/earningsAPI.js';
+import shopOwnerAPI from './APIs/shopOwnerAPI.js';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
 
@@ -20,12 +21,12 @@ const app = exp();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: true,   // allow any frontend port during development
+    origin: true,
     credentials: true
   }
 });
 
-// ✅ Attach Socket.io instance to app context so routers can access it
+// ✅ Attach Socket.io instance to app context
 app.set("io", io);
 
 // ✅ CORS middleware
@@ -36,6 +37,7 @@ app.use(cors({
   ],
   credentials: true
 }));
+
 // ✅ body parser
 app.use(exp.json());
 
@@ -46,9 +48,28 @@ app.use(cookieParser());
 io.on("connection", (socket) => {
   console.log(`Socket client connected: ${socket.id}`);
 
+  // Client joins a specific room
   socket.on("join-room", (room) => {
     socket.join(room);
     console.log(`Client ${socket.id} joined room: ${room}`);
+  });
+
+  // Admin joins admin room to receive all rider location updates
+  socket.on("join-admin", () => {
+    socket.join("admin-room");
+    console.log(`Admin client ${socket.id} joined admin-room`);
+  });
+
+  // Shop owner joins their shop room
+  socket.on("join-shop", (shopId) => {
+    socket.join(`shop:${shopId}`);
+    console.log(`Shop owner ${socket.id} joined shop:${shopId}`);
+  });
+
+  // Rider joins their shop room for order updates
+  socket.on("rider-join-shop", (shopId) => {
+    socket.join(`shop:${shopId}`);
+    console.log(`Rider ${socket.id} joined shop:${shopId}`);
   });
 
   socket.on("disconnect", () => {
@@ -67,8 +88,12 @@ app.use("/api/auth", authAPI);
 app.use("/api/orders", orderAPI);
 app.use("/api/location", locationAPI);
 app.use("/api/earnings", earningsAPI);
+app.use("/api/shop-owner", shopOwnerAPI);
 
-// ✅ connect to database
+console.log("[ROUTES] Auth API mounted at /api/auth");
+console.log("[ROUTES] Shop Owner API mounted at /api/shop-owner");
+
+// ✅ Connect to database
 const connectDB = async () => {
   try {
     await connect(process.env.DB_URL);
@@ -87,17 +112,11 @@ connectDB();
 
 // ✅ invalid path handler
 app.use((req, res) => {
-  res.status(404).json({
-    message: `${req.url} invalid path`
-  });
+  res.status(404).json({ message: `${req.url} invalid path` });
 });
 
 // ✅ global error handler
 app.use((err, req, res, next) => {
   console.log("error:", err);
-
-  res.status(500).json({
-    message: "Internal server error",
-    reason: err.message
-  });
+  res.status(500).json({ message: "Internal server error", reason: err.message });
 });

@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import API, { saveShopLocation, getShopLocation } from "../api";
+import useAuthStore from "../store/authstore";
 import { 
   Store, 
   User, 
@@ -85,12 +86,24 @@ const ShopSetup = () => {
   const [loadingShop, setLoadingShop] = useState(false);
 
   // Profile Form State
+  const userObj = useAuthStore((state) => state.user);
   const [profileForm, setProfileForm] = useState({
-    name: "Dhanvi Shah",
-    email: "admin@dispatchflow.com",
-    phone: "+91 91265 47610",
-    role: "Operations Manager"
+    name: "",
+    email: "",
+    phone: "",
+    role: ""
   });
+
+  useEffect(() => {
+    if (userObj) {
+      setProfileForm({
+        name: userObj.name || "",
+        email: userObj.email || "",
+        phone: userObj.phone || "",
+        role: userObj.role === "admin" ? "Platform Admin" : "Shop Owner",
+      });
+    }
+  }, [userObj]);
 
   // Notifications State
   const [notifConfig, setNotifConfig] = useState({

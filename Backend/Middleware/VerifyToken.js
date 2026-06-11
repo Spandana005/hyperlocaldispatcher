@@ -1,10 +1,14 @@
 import jwt from "jsonwebtoken";
 import { UserTypeModel } from "../Models/UserModel.js";
+import { RiderModel } from "../Models/RiderModel.js";
 
+/**
+ * verifyToken middleware factory
+ * Usage: verifyToken("admin", "shop_owner", "rider")
+ */
 export const verifyToken =
   (...allowedRoles) =>
   async (req, res, next) => {
-
     try {
       let token = null;
       let tokenSource = null;
@@ -24,57 +28,71 @@ export const verifyToken =
         tokenSource = "accessToken Cookie";
       }
 
-      console.log(`[AUTH VERIFICATION] Token source: ${tokenSource || "NONE"}, Token retrieved: ${token ? "PRESENT" : "MISSING"}`);
-
       // NO TOKEN
       if (!token) {
-        console.warn("[AUTH VERIFICATION] Rejecting request: No token provided");
-        return res.status(401).json({
-          message: "No token provided",
-        });
+        return res.status(401).json({ message: "No token provided" });
       }
 
       // VERIFY TOKEN
-      const decoded = jwt.verify(
-        token,
-        process.env.SECRET_KEY
-      );
-
-      console.log("[AUTH VERIFICATION] Token validation success. Decoded user payload:", decoded);
+      const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
       // ROLE CHECK
-      if (
-        !allowedRoles.includes(
-          decoded.role
-        )
-      ) {
-        console.warn(`[AUTH VERIFICATION] Access Denied: User role ${decoded.role} not in allowed roles [${allowedRoles.join(", ")}]`);
-        return res.status(403).json({
-          message: "Access denied",
-        });
+      if (!allowedRoles.includes(decoded.role)) {
+        return res.status(403).json({ message: "Access denied: insufficient role" });
       }
 
       // CHECK IF USER IS BLOCKED
       const dbUser = await UserTypeModel.findById(decoded.userId);
-      if (dbUser && dbUser.isBlocked) {
-        console.warn(`[AUTH VERIFICATION] Access Denied: User ${decoded.userId} is currently blocked in database`);
+      if (!dbUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      if (dbUser.isBlocked || dbUser.isActive === false) {
         return res.status(403).json({
           message: "Account blocked by admin. Contact support.",
           isBlocked: true,
         });
       }
 
-      // SAVE USER
+      // RIDER: Check approval status
+      if (decoded.role === "rider") {
+        const riderProfile = await RiderModel.findOne({ userId: decoded.userId });
+        
+        // Skip approval checks for onboarding & profile endpoints
+        const isOnboarding = req.originalUrl.includes("/me") || req.originalUrl.includes("/join-shop");
+        if (riderProfile && riderProfile.approvalStatus !== "Approved" && !isOnboarding) {
+          return res.status(403).json({
+            message: `Rider account is ${riderProfile.approvalStatus}. Contact your shop owner.`,
+            approvalStatus: riderProfile.approvalStatus,
+          });
+        }
+        // Attach shopId from rider profile if not in token
+        if (riderProfile && riderProfile.shopId && !decoded.shopId) {
+          decoded.shopId = riderProfile.shopId.toString();
+        }
+      }
+
+      // Save decoded user info for route handlers
       req.user = decoded;
       next();
-
     } catch (err) {
-      console.error("[AUTH VERIFICATION] Failed validation error:", err.message);
-
       return res.status(401).json({
         message: "Invalid or expired token",
         error: err.message,
       });
     }
-
   };
+
+/**
+ * requireAdmin – shorthand middleware
+ */
+export const requireAdmin = verifyToken("admin");
+
+/**
+ * requireShopOwner – shorthand middleware
+ */
+export const requireShopOwner = verifyToken("shop_owner");
+
+/**
+ * requireRider – shorthand middleware (also checks approval)
+ */
+export const requireRider = verifyToken("rider");

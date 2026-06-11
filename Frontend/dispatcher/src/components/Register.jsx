@@ -220,7 +220,7 @@ const Register = () => {
                 className="w-full border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 p-3 rounded-xl outline-none text-sm transition-all bg-slate-50/50 cursor-pointer"
               >
                 <option value="rider">Delivery Rider (GPS Location & Earnings)</option>
-                <option value="admin">Operations Admin (Dispatching & Monitoring)</option>
+                <option value="shop_owner">Shop Owner (Manage Shop & Orders)</option>
               </select>
             </div>
 

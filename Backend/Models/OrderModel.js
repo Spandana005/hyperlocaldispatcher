@@ -1,272 +1,159 @@
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
-
   {
+    // =========================
+    // SHOP ISOLATION
+    // =========================
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      required: true,
+    },
 
     // =========================
     // CUSTOMER DETAILS
     // =========================
     customerName: {
-
       type: String,
-
       required: true,
-
     },
-
 
     phone: {
-
       type: String,
-
       required: true,
-
     },
-
 
     address: {
-
       pincode: {
-    
         type: String,
-    
-        required: true,
-    
-      },
-    
-      city: {
-    
-        type: String,
-    
-        required: true,
-    
-      },
-    
-      state: {
-    
-        type: String,
-    
-        required: true,
-    
-      },
-    
-      area: {
-    
-        type: String,
-    
-        required: true,
-    
-      },
-    
-      building: {
-    
-        type: String,
-    
-        required: true,
-    
-      },
-    
-      landmark: {
-    
-        type: String,
-    
         default: "",
-    
       },
-    
-      addressType: {
-    
+      city: {
         type: String,
-    
-        default: "Home",
-    
+        default: "",
       },
-    
+      state: {
+        type: String,
+        default: "",
+      },
+      area: {
+        type: String,
+        required: true,
+      },
+      building: {
+        type: String,
+        required: true,
+      },
+      landmark: {
+        type: String,
+        default: "",
+      },
+      addressType: {
+        type: String,
+        default: "Home",
+      },
     },
-
 
     orderDetails: {
-
       type: String,
-
       required: true,
-
     },
-
 
     // =========================
     // ORDER STATUS
     // =========================
     status: {
-
       type: String,
-
       enum: [
-
-        "pending",
-
-        "assigned",
-
-        "accepted",
-
-        "rejected",
-
-        "dispatched",
-
-        "delivered",
-
+        "Pending",
+        "Assigned",
+        "Accepted",
+        "OutForDelivery",
+        "Delivered",
+        "Cancelled",
       ],
-
-      default: "pending",
-
+      default: "Pending",
     },
-
 
     // =========================
     // ASSIGNED RIDER
     // =========================
     assignedRider: {
-
-      type:
-        mongoose.Schema.Types.ObjectId,
-
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-
       default: null,
-
     },
 
-
     // =========================
-    // REQUESTED RIDERS
+    // REQUESTED RIDERS (for broadcast)
     // =========================
     requestedRiders: [
-
       {
-
-        type:
-          mongoose.Schema.Types.ObjectId,
-
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-
       },
-
     ],
 
-
-    // =========================
-    // ACCEPTED BY RIDER
-    // =========================
     acceptedByRider: {
-
       type: Boolean,
-
       default: false,
-
     },
-
 
     // =========================
     // RIDER LIVE LOCATION
     // =========================
     riderLocation: {
-
       lat: {
-
         type: Number,
-
         default: 0,
-
       },
-
       lng: {
-
         type: Number,
-
         default: 0,
-
       },
-
     },
-
 
     // =========================
     // DELIVERY LOCATION
     // =========================
     deliveryLocation: {
-
       lat: {
-
         type: Number,
-
         default: 0,
-
       },
-
       lng: {
-
         type: Number,
-
         default: 0,
-
       },
-
     },
-
 
     deliveryAddress: {
-
       fullAddress: {
-
         type: String,
-
         default: "",
-
       },
-
       lat: {
-
         type: Number,
-
         default: 0,
-
       },
-
       lng: {
-
         type: Number,
-
         default: 0,
-
       },
-
     },
-
 
     deliveredAt: {
-
       type: Date,
-
       default: null,
-
     },
-
   },
-
   {
-
     timestamps: true,
-
   }
-
 );
 
+orderSchema.index({ shopId: 1 });
+orderSchema.index({ assignedRider: 1 });
 
-export const OrderTypeModel = mongoose.model(
-
-  "order",
-
-  orderSchema
-
-);
+export const OrderTypeModel = mongoose.model("order", orderSchema);

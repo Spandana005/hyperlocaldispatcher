@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Settings,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Store
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -30,6 +31,8 @@ const Sidebar = () => {
     const activeStyle =
       role === "admin"
         ? "bg-blue-50 text-blue-600 shadow-sm"
+        : role === "shop_owner"
+        ? "bg-indigo-50 text-indigo-650 shadow-sm"
         : "bg-green-50 text-green-700 shadow-sm";
     const inactiveStyle = "text-slate-650 hover:bg-slate-50 hover:text-slate-900";
 
@@ -153,6 +156,71 @@ const Sidebar = () => {
               </Link>
             </>
           )}
+
+          {/* Shop Owner Sidebar Navigation */}
+          {user?.role === "shop_owner" && (
+            <>
+              <Link to="/shop/dashboard" className={linkStyle("/shop/dashboard", "shop_owner")}>
+                <LayoutDashboard className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Dashboard</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Dashboard
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/create-order" className={linkStyle("/shop/create-order", "shop_owner")}>
+                <PlusCircle className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Create Order</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Create Order
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/orders" className={linkStyle("/shop/orders", "shop_owner")}>
+                <Package className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Orders Log</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Orders Log
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/rider-requests" className={linkStyle("/shop/rider-requests", "shop_owner")}>
+                <UserCheck className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Rider Requests</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Rider Requests
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/riders" className={linkStyle("/shop/riders", "shop_owner")}>
+                <Users className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Riders Hub</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Riders Hub
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/settings" className={linkStyle("/shop/settings", "shop_owner")}>
+                <Settings className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Shop Settings</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Shop Settings
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -167,12 +235,19 @@ const Sidebar = () => {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800 truncate">{user?.name || "User Account"}</p>
               <div className="flex items-center gap-1 mt-0.5">
-                {user?.role === "admin" ? (
+                {user?.role === "admin" && (
                   <>
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Admin</span>
                   </>
-                ) : (
+                )}
+                {user?.role === "shop_owner" && (
+                  <>
+                    <Store className="w-3.5 h-3.5 text-indigo-600" />
+                    <span className="text-[10px] font-bold text-indigo-650 uppercase tracking-wider">Shop Owner</span>
+                  </>
+                )}
+                {user?.role === "rider" && (
                   <>
                     <UserCheck className="w-3.5 h-3.5 text-green-700" />
                     <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Rider</span>

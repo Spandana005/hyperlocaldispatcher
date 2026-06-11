@@ -122,6 +122,9 @@ const RootLayout = () => {
     "/",
     "/login",
     "/register",
+    "/create-shop",
+    "/join-shop",
+    "/pending-approval",
   ];
 
 

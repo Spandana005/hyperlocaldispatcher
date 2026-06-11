@@ -47,10 +47,26 @@ const Login = () => {
       toast.success(`Welcome back, ${response.user.name}!`);
 
       // Redirect Based On Role
-      if (response.user.role === "admin") {
+      const user = response.user;
+      if (user.role === "admin") {
         navigate("/admin/dashboard");
+      } else if (user.role === "shop_owner") {
+        if (!user.shopProfile) {
+          navigate("/create-shop");
+        } else {
+          navigate("/shop/dashboard");
+        }
+      } else if (user.role === "rider") {
+        const rp = user.riderProfile;
+        if (!rp || !rp.shopId) {
+          navigate("/join-shop");
+        } else if (rp.approvalStatus === "Pending" || rp.approvalStatus === "Rejected") {
+          navigate("/pending-approval");
+        } else {
+          navigate("/rider/dashboard");
+        }
       } else {
-        navigate("/rider/dashboard");
+        navigate("/");
       }
     } catch (error) {
       toast.error(error.message || "Failed to sign in. Check credentials.");
