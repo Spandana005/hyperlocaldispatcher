@@ -72,6 +72,12 @@ io.on("connection", (socket) => {
     console.log(`Rider ${socket.id} joined shop:${shopId}`);
   });
 
+  // Rider joins their personal room (rider:{userId}) for direct order broadcasts
+  socket.on("rider-join-personal", (userId) => {
+    socket.join(`rider:${userId}`);
+    console.log(`Rider ${socket.id} joined personal room rider:${userId}`);
+  });
+
   socket.on("disconnect", () => {
     console.log(`Socket client disconnected: ${socket.id}`);
   });

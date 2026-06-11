@@ -160,6 +160,8 @@ export const assignRiderToOrder = (orderId, riderId) =>
   API.put(`/api/shop-owner/orders/assign/${orderId}`, { riderId });
 export const deleteShopOwnerOrder = (orderId) =>
   API.delete(`/api/shop-owner/orders/${orderId}`);
+export const getRiderAnalytics = () =>
+  API.get("/api/shop-owner/rider-analytics");
 
 // ==========================
 // ORDER APIs (shared)

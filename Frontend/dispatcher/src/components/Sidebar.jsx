@@ -13,7 +13,9 @@ import {
   Settings,
   ShieldCheck,
   UserCheck,
-  Store
+  Store,
+  Map,
+  BarChart3
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -190,6 +192,16 @@ const Sidebar = () => {
                 )}
               </Link>
 
+              <Link to="/shop/tracking" className={linkStyle("/shop/tracking", "shop_owner")}>
+                <Map className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Live Tracking</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Live Tracking
+                  </span>
+                )}
+              </Link>
+
               <Link to="/shop/rider-requests" className={linkStyle("/shop/rider-requests", "shop_owner")}>
                 <UserCheck className="w-5 h-5 shrink-0" />
                 {!isCollapsed && <span>Rider Requests</span>}
@@ -206,6 +218,16 @@ const Sidebar = () => {
                 {isCollapsed && (
                   <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
                     Riders Hub
+                  </span>
+                )}
+              </Link>
+
+              <Link to="/shop/analytics" className={linkStyle("/shop/analytics", "shop_owner")}>
+                <BarChart3 className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Rider Analytics</span>}
+                {isCollapsed && (
+                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
+                    Rider Analytics
                   </span>
                 )}
               </Link>

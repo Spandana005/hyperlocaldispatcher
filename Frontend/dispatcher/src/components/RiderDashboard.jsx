@@ -50,8 +50,8 @@ const RiderDashboard = () => {
       const ordersRes = await API.get("/api/rider/my-orders");
       const assigned = ordersRes.data;
       
-      // Active orders are those with status "accepted" or "dispatched"
-      const active = assigned.find(o => o.status === "accepted" || o.status === "dispatched");
+      // Active orders are those with status "Accepted" or "OutForDelivery"
+      const active = assigned.find(o => o.status === "Accepted" || o.status === "OutForDelivery");
       setActiveOrder(active);
 
       // 2. Fetch earnings info
@@ -71,14 +71,14 @@ const RiderDashboard = () => {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      await API.put(`/api/orders/status/${orderId}`, { status: newStatus });
-      toast.success(`Order status set to ${newStatus}!`);
+      await API.put(`/api/rider/update-status/${orderId}`, { status: newStatus });
+      toast.success(`Order status set to ${newStatus === "OutForDelivery" ? "Out For Delivery" : newStatus}!`);
 
       // Geolocation Live tracking reaction:
-      if (newStatus === "dispatched") {
+      if (newStatus === "OutForDelivery") {
         console.log(`[RIDER DASHBOARD] Order ${orderId} dispatched. Starting location tracking.`);
         startTracking(orderId);
-      } else if (newStatus === "delivered") {
+      } else if (newStatus === "Delivered") {
         console.log(`[RIDER DASHBOARD] Order ${orderId} delivered. Stopping location tracking.`);
         await stopTracking();
       }
@@ -181,8 +181,8 @@ const RiderDashboard = () => {
           <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold uppercase tracking-wider mr-2">
-                  {activeOrder.status}
+                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-250 rounded-full text-[10px] font-bold uppercase tracking-wider mr-2">
+                  {activeOrder.status === "OutForDelivery" ? "Out For Delivery" : activeOrder.status}
                 </span>
                 <span className="font-mono text-[10px] text-slate-400 font-semibold">ID: #{activeOrder._id.slice(-8)}</span>
               </div>
@@ -224,17 +224,17 @@ const RiderDashboard = () => {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 select-none">
-              {activeOrder.status === "accepted" && (
+              {activeOrder.status === "Accepted" && (
                 <button
-                  onClick={() => handleUpdateStatus(activeOrder._id, "dispatched")}
+                  onClick={() => handleUpdateStatus(activeOrder._id, "OutForDelivery")}
                   className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
                 >
                   <Compass className="w-4 h-4 animate-spin-slow" /> Start Delivery
                 </button>
               )}
-              {activeOrder.status === "dispatched" && (
+              {activeOrder.status === "OutForDelivery" && (
                 <button
-                  onClick={() => handleUpdateStatus(activeOrder._id, "delivered")}
+                  onClick={() => handleUpdateStatus(activeOrder._id, "Delivered")}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle className="w-4 h-4" /> Complete Trip

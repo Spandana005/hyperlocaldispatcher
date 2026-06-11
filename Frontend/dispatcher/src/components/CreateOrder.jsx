@@ -101,8 +101,6 @@ const CreateOrder = () => {
           setShopDetails(shop);
           if (shop.latitude && shop.longitude) {
             setShopPosition({ lat: shop.latitude, lng: shop.longitude });
-            setSelectedPosition({ lat: shop.latitude, lng: shop.longitude });
-            handleReverseGeocode(shop.latitude, shop.longitude);
           }
         }
       } catch (err) {
@@ -179,7 +177,7 @@ const CreateOrder = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedPosition) {
-      toast.error("Please select a delivery location on the map");
+      toast.error("Please select a customer delivery location on the map");
       return;
     }
 
@@ -236,12 +234,7 @@ const CreateOrder = () => {
         addressType: "Home",
         orderDetails: "",
       });
-      if (shopPosition) {
-        setSelectedPosition(shopPosition);
-        handleReverseGeocode(shopPosition.lat, shopPosition.lng);
-      } else {
-        setSelectedPosition(null);
-      }
+      setSelectedPosition(null);
 
       // Navigate back to orders list
       navigate(user.role === "shop_owner" ? "/shop/orders" : "/admin/orders");
@@ -451,6 +444,23 @@ const CreateOrder = () => {
             <MapPin className="w-5 h-5 text-slate-400" />
             Set Customer Location
           </h2>
+
+          {selectedPosition ? (
+            <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-xs font-semibold text-emerald-800 flex flex-col gap-1.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5">🟢 Customer Pin Set</span>
+                <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-bold uppercase">Ready</span>
+              </div>
+              <p className="text-[10px] text-emerald-600 font-mono font-bold">
+                Coordinates: {selectedPosition.lat.toFixed(6)}, {selectedPosition.lng.toFixed(6)}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-100 p-3.5 rounded-xl text-xs font-semibold text-amber-800 flex items-center justify-between shadow-sm">
+              <span>⚠️ Map pin selection is mandatory</span>
+              <span className="text-[10px] bg-amber-200 text-amber-850 px-2 py-0.5 rounded-full font-bold uppercase">Required</span>
+            </div>
+          )}
 
           {/* Search location bar */}
           <div className="flex gap-2">

@@ -8,7 +8,7 @@ import {
 import { useState, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import API, { saveShopLocation, getShopLocation } from "../api";
+import API, { saveShopLocation, getShopLocation, getMyShop, updateMyShop } from "../api";
 import useAuthStore from "../store/authstore";
 import { 
   Store, 
@@ -122,7 +122,9 @@ const ShopSetup = () => {
   useEffect(() => {
     const fetchShopSpot = async () => {
       try {
-        const response = await getShopLocation();
+        const response = userObj?.role === "shop_owner"
+          ? await getMyShop()
+          : await getShopLocation();
         if (response.data?.success && response.data?.shop) {
           const { shopName, latitude, longitude, address } = response.data.shop;
           setShopName(shopName || "");
@@ -136,7 +138,7 @@ const ShopSetup = () => {
       }
     };
     fetchShopSpot();
-  }, []);
+  }, [userObj]);
 
   // Save Shop Spot
   const saveLocation = async () => {
@@ -147,17 +149,23 @@ const ShopSetup = () => {
     setLoadingShop(true);
 
     try {
-      await saveShopLocation({
-        shopName,
-        latitude: position[0],
-        longitude: position[1],
-        address: shopAddress
-      });
+      if (userObj?.role === "shop_owner") {
+        await updateMyShop({
+          shopName,
+          latitude: position[0],
+          longitude: position[1],
+          address: shopAddress
+        });
+      } else {
+        await saveShopLocation({
+          shopName,
+          latitude: position[0],
+          longitude: position[1],
+          address: shopAddress
+        });
+      }
 
-      toast.success("Business settings saved successfully!");
-      setTimeout(() => {
-        window.location.href = "/admin/tracking";
-      }, 1000);
+      toast.success("Dispatch Spot Saved Successfully");
     } catch (err) {
       toast.error("Failed to save coordinates setup");
     } finally {

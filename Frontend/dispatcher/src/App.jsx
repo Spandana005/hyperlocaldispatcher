@@ -31,6 +31,8 @@ import PendingApprovalPage from "./components/PendingApprovalPage";
 import ShopDashboard from "./components/ShopDashboard";
 import ShopOrders from "./components/ShopOrders";
 import ShopRiders from "./components/ShopRiders";
+import ShopTracking from "./components/ShopTracking";
+import RiderAnalytics from "./components/RiderAnalytics";
 
 // Protected Route
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -215,6 +217,22 @@ function App() {
           element: (
             <ProtectedRoute role="shop_owner">
               <ShopRiders />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/tracking",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <ShopTracking />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "shop/analytics",
+          element: (
+            <ProtectedRoute role="shop_owner">
+              <RiderAnalytics />
             </ProtectedRoute>
           ),
         },

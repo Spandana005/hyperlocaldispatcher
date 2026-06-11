@@ -4,6 +4,7 @@ import { ShopModel, generateShopCode } from "../Models/ShopModel.js";
 import { RiderModel } from "../Models/RiderModel.js";
 import { OrderTypeModel } from "../Models/OrderModel.js";
 import { UserTypeModel } from "../Models/UserModel.js";
+import { EarningsModel } from "../Models/EarningsModel.js";
 
 const shopOwnerRouter = express.Router();
 
@@ -263,13 +264,17 @@ shopOwnerRouter.post("/orders", verifyToken("shop_owner"), async (req, res) => {
     if (!address || !address.area || !address.building) {
       return res.status(400).json({ message: "Address area and building are required." });
     }
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: "Customer location (latitude and longitude) is required. Please pin the location on the map." });
+    }
 
-    // Find available approved riders in the same shop
-    const availableRiders = await RiderModel.find({
+    // Broadcast to ALL approved riders in the shop (not just available)
+    const allApprovedRiders = await RiderModel.find({
       shopId: shop._id,
       approvalStatus: "Approved",
-      isAvailable: true,
-    });
+    }).select("userId");
+
+    const riderUserIds = allApprovedRiders.map((r) => r.userId);
 
     const fullAddress = buildFullAddress(address);
 
@@ -280,18 +285,28 @@ shopOwnerRouter.post("/orders", verifyToken("shop_owner"), async (req, res) => {
       address,
       orderDetails,
       status: "Pending",
-      deliveryLocation: { lat: latitude || 0, lng: longitude || 0 },
-      deliveryAddress: { fullAddress, lat: latitude || 0, lng: longitude || 0 },
-      requestedRiders: availableRiders.map((r) => r.userId),
+      deliveryLocation: { lat: latitude, lng: longitude },
+      deliveryAddress: { fullAddress, lat: latitude, lng: longitude },
+      requestedRiders: riderUserIds,
     });
 
-    // Broadcast new order
+    // Populate assignedRider for socket payload
+    const populatedOrder = await OrderTypeModel.findById(order._id)
+      .populate("shopId", "shopName address latitude longitude")
+      .lean();
+
     const io = req.app.get("io");
     if (io) {
-      io.to(`shop:${shop._id}`).emit("order:new-assigned", order);
+      // Emit to the shop room (shop owner sees it)
+      io.to(`shop:${shop._id}`).emit("order:new", populatedOrder);
+      
+      // Emit to each individual rider's personal room
+      riderUserIds.forEach((riderId) => {
+        io.to(`rider:${riderId}`).emit("order:new", populatedOrder);
+      });
     }
 
-    res.status(201).json({ success: true, order, availableRiders });
+    res.status(201).json({ success: true, order: populatedOrder, broadcastedTo: riderUserIds.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -420,6 +435,102 @@ shopOwnerRouter.get("/stats", verifyToken("shop_owner"), async (req, res) => {
       recentOrders,
       ridersList,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// =============================================
+// 14. SHOP OWNER RIDER PERFORMANCE ANALYTICS
+// =============================================
+shopOwnerRouter.get("/rider-analytics", verifyToken("shop_owner"), async (req, res) => {
+  try {
+    const shop = await ShopModel.findOne({ ownerId: req.user.userId });
+    if (!shop) return res.status(404).json({ message: "Shop not found." });
+
+    const riders = await RiderModel.find({ shopId: shop._id, approvalStatus: "Approved" })
+      .populate("userId", "name email phone");
+
+    const analytics = await Promise.all(riders.map(async (rider) => {
+      const riderId = rider.userId?._id;
+      if (!riderId) return null;
+
+      // 1. Fetch completed orders for this rider in this shop
+      const completedOrders = await OrderTypeModel.find({
+        shopId: shop._id,
+        assignedRider: riderId,
+        status: "Delivered"
+      });
+
+      // 2. Fetch Avg Delivery Time (in minutes)
+      let totalDeliveryTime = 0;
+      let timedOrdersCount = 0;
+      completedOrders.forEach(order => {
+        if (order.deliveredAt && order.createdAt) {
+          const diffMs = new Date(order.deliveredAt) - new Date(order.createdAt);
+          totalDeliveryTime += diffMs / (1000 * 60); // minutes
+          timedOrdersCount++;
+        }
+      });
+      const avgDeliveryTime = timedOrdersCount > 0 ? Math.round(totalDeliveryTime / timedOrdersCount) : 0;
+
+      // 3. Fetch Earnings history for this rider to sum distance and amount
+      const earnings = await EarningsModel.findOne({ riderId });
+      let totalDistance = 0;
+      let totalEarnings = 0;
+      let activeDays = new Set();
+
+      if (earnings) {
+        // Find completed order IDs for this shop to filter earnings history
+        const shopCompletedOrderIds = completedOrders.map(o => o._id.toString());
+        earnings.history.forEach(item => {
+          if (item.orderId && shopCompletedOrderIds.includes(item.orderId.toString())) {
+            totalDistance += item.distance || 0;
+            totalEarnings += item.amount || 0;
+            if (item.date) {
+              activeDays.add(new Date(item.date).toISOString().split('T')[0]);
+            }
+          }
+        });
+      }
+
+      // 4. Calculate Acceptance Rate
+      // Opportunities = total orders created in this shop since rider joined (approximated by rider.createdAt)
+      const opportunities = await OrderTypeModel.countDocuments({
+        shopId: shop._id,
+        createdAt: { $gte: rider.createdAt }
+      });
+      const acceptedCount = await OrderTypeModel.countDocuments({
+        shopId: shop._id,
+        assignedRider: riderId,
+        status: { $in: ["Accepted", "OutForDelivery", "Delivered"] }
+      });
+      const acceptanceRate = opportunities > 0 ? Math.round((acceptedCount / opportunities) * 100) : 100;
+
+      // 5. Calculate Completion Rate
+      // Completion Rate = Completed Orders / Accepted Orders
+      const completionRate = acceptedCount > 0 ? Math.round((completedOrders.length / acceptedCount) * 100) : 100;
+
+      return {
+        riderId,
+        name: rider.userId.name,
+        email: rider.userId.email,
+        phone: rider.userId.phone,
+        vehicleType: rider.vehicleType,
+        completedDeliveries: completedOrders.length,
+        totalEarnings,
+        totalDistance: Math.round(totalDistance * 100) / 100,
+        avgDeliveryTime,
+        acceptanceRate: Math.min(100, acceptanceRate),
+        completionRate: Math.min(100, completionRate),
+        activeDays: activeDays.size,
+      };
+    }));
+
+    // Filter out nulls
+    const filteredAnalytics = analytics.filter(a => a !== null);
+
+    res.json({ success: true, analytics: filteredAnalytics });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

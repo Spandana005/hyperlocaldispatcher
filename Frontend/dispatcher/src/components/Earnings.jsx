@@ -6,8 +6,6 @@ import {
   CheckCircle, 
   Calendar, 
   TrendingUp, 
-  Download, 
-  FileSpreadsheet, 
   BarChart3, 
   Clock, 
   MapPin,
@@ -81,9 +79,6 @@ const Earnings = () => {
       .reduce((sum, item) => sum + item.amount, 0);
   };
 
-  const handleExportStatement = () => {
-    toast.success("Statement Ledger exported successfully as CSV!");
-  };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -97,13 +92,6 @@ const Earnings = () => {
             Track daily completed shipments, dynamic distance payouts, and financial statement logs.
           </p>
         </div>
-
-        <button
-          onClick={handleExportStatement}
-          className="bg-slate-950 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm"
-        >
-          <Download className="w-4 h-4" /> Export CSV
-        </button>
       </div>
 
       {loading ? (

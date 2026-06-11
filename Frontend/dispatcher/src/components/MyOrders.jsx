@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import API from "../api";
 import useTrackingStore from "../store/trackingstore";
+import useAuthStore from "../store/authstore";
+import io from "socket.io-client";
 import { 
   AlertTriangle, 
   MapPin, 
@@ -19,21 +21,12 @@ import {
 import { toast } from "react-hot-toast";
 
 const MyOrders = () => {
+  const user = useAuthStore((state) => state.user);
   const [orders, setOrders] = useState([]);
   const [availableOrders, setAvailableOrders] = useState([]);
 
   const startTracking = useTrackingStore((state) => state.startTracking);
   const stopTracking = useTrackingStore((state) => state.stopTracking);
-
-  useEffect(() => {
-    fetchOrders();
-    fetchAvailableOrders();
-    const interval = setInterval(() => {
-      fetchOrders();
-      fetchAvailableOrders();
-    }, 6000);
-    return () => clearInterval(interval);
-  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -53,6 +46,61 @@ const MyOrders = () => {
     }
   };
 
+  useEffect(() => {
+    fetchOrders();
+    fetchAvailableOrders();
+    const interval = setInterval(() => {
+      fetchOrders();
+      fetchAvailableOrders();
+    }, 12000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const socketUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:4000";
+    const socket = io(socketUrl);
+
+    socket.on("connect", () => {
+      console.log("[RIDER MYORDERS] Connected to socket, joining personal room");
+      socket.emit("rider-join-personal", user._id);
+    });
+
+    socket.on("order:new", (newOrder) => {
+      console.log("[RIDER MYORDERS] New order broadcast received:", newOrder);
+      setAvailableOrders((prev) => {
+        if (prev.some((o) => o._id === newOrder._id)) return prev;
+        const isRequested = newOrder.requestedRiders?.some(
+          (id) => (id._id || id).toString() === user._id.toString()
+        );
+        if (isRequested) {
+          return [newOrder, ...prev];
+        }
+        return prev;
+      });
+    });
+
+    socket.on("order:accepted", (data) => {
+      console.log("[RIDER MYORDERS] Order accepted by another rider:", data);
+      setAvailableOrders((prev) => prev.filter((o) => o._id !== data.orderId));
+      if (data.acceptedBy === user._id) {
+        fetchOrders();
+        fetchAvailableOrders();
+      }
+    });
+
+    socket.on("order:status-changed", (updatedOrder) => {
+      if (updatedOrder.assignedRider === user._id || updatedOrder.assignedRider?._id === user._id) {
+        fetchOrders();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?._id]);
+
   const respondOrder = async (orderId, action) => {
     try {
       await API.put(`/api/rider/respond-order/${orderId}`, { action });
@@ -71,13 +119,13 @@ const MyOrders = () => {
   const updateStatus = async (orderId, status) => {
     try {
       await API.put(`/api/rider/update-status/${orderId}`, { status });
-      toast.success(`Shipment marked as ${status}!`);
+      toast.success(`Shipment marked as ${status === "OutForDelivery" ? "Out For Delivery" : status}!`);
 
       // Geolocation live tracking reaction
-      if (status === "dispatched") {
+      if (status === "OutForDelivery") {
         console.log(`[MY ORDERS] Order ${orderId} dispatched. Starting location tracking.`);
         startTracking(orderId);
-      } else if (status === "delivered") {
+      } else if (status === "Delivered") {
         console.log(`[MY ORDERS] Order ${orderId} delivered. Stopping location tracking.`);
         await stopTracking();
       }
@@ -200,12 +248,12 @@ const MyOrders = () => {
                   <div className="flex justify-between items-center border-b border-slate-50 pb-3">
                     <h3 className="font-extrabold text-slate-800 text-sm">{order.customerName}</h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border
-                      ${order.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-100" : ""}
-                      ${order.status === "dispatched" ? "bg-purple-50 text-purple-700 border-purple-100" : ""}
-                      ${order.status === "delivered" ? "bg-green-50 text-green-700 border-green-100" : ""}
-                      ${["assigned", "accepted"].includes(order.status) ? "bg-blue-50 text-blue-700 border-blue-100" : ""}
+                      ${order.status === "Pending" ? "bg-amber-50 text-amber-700 border-amber-100" : ""}
+                      ${order.status === "OutForDelivery" ? "bg-purple-50 text-purple-700 border-purple-100" : ""}
+                      ${order.status === "Delivered" ? "bg-green-50 text-green-700 border-green-100" : ""}
+                      ${["Assigned", "Accepted"].includes(order.status) ? "bg-blue-50 text-blue-700 border-blue-100" : ""}
                     `}>
-                      {order.status}
+                      {order.status === "OutForDelivery" ? "Out For Delivery" : order.status}
                     </span>
                   </div>
 
@@ -226,7 +274,7 @@ const MyOrders = () => {
                     <div className="space-y-2">
                       <p>
                         <span className="text-[9px] text-slate-400 uppercase font-bold block">Locality address</span>
-                        <span className="text-slate-700 leading-relaxed block">
+                        <span className="text-slate-775 leading-relaxed block">
                           {order.address?.building}, {order.address?.area}, {order.address?.city}
                         </span>
                       </p>
@@ -242,17 +290,17 @@ const MyOrders = () => {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 mt-6 border-t border-slate-50 pt-4 select-none">
-                  {order.status === "accepted" && (
+                  {order.status === "Accepted" && (
                     <button
-                      onClick={() => updateStatus(order._id, "dispatched")}
+                      onClick={() => updateStatus(order._id, "OutForDelivery")}
                       className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <Compass className="w-3.5 h-3.5" /> Start Delivery
                     </button>
                   )}
-                  {order.status === "dispatched" && (
+                  {order.status === "OutForDelivery" && (
                     <button
-                      onClick={() => updateStatus(order._id, "delivered")}
+                      onClick={() => updateStatus(order._id, "Delivered")}
                       className="bg-green-650 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <CheckCircle className="w-3.5 h-3.5" /> Mark Delivered

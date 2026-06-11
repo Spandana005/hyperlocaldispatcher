@@ -72,38 +72,65 @@ riderrouter.put("/respond-order/:orderId", verifyToken("rider"), async (req, res
     }
 
     const { action } = req.body;
-    const order = await OrderTypeModel.findById(req.params.orderId);
-
-    if (!order) return res.status(404).json({ message: "Order not found" });
-    if (order.acceptedByRider) return res.status(400).json({ message: "Order already accepted" });
-
-    // Security: rider must be in the order's shop
-    if (order.shopId.toString() !== riderProfile.shopId.toString()) {
-      return res.status(403).json({ message: "Order not from your shop." });
-    }
-
-    if (!order.requestedRiders.some(id => id.toString() === req.user.userId)) {
-      return res.status(403).json({ message: "Order not assigned to you" });
-    }
 
     if (action === "accept") {
-      order.assignedRider = req.user.userId;
-      order.acceptedByRider = true;
-      order.status = "Accepted";
-      order.requestedRiders = [];
+      // ATOMIC ACCEPT — prevents race conditions
+      // Only update if: order is still Pending AND not yet accepted by another rider
+      const order = await OrderTypeModel.findOneAndUpdate(
+        {
+          _id: req.params.orderId,
+          acceptedByRider: false,
+          status: "Pending",
+          requestedRiders: req.user.userId,
+          shopId: riderProfile.shopId,
+        },
+        {
+          $set: {
+            assignedRider: req.user.userId,
+            acceptedByRider: true,
+            status: "Accepted",
+            requestedRiders: [],
+          },
+        },
+        { new: true }
+      );
+
+      if (!order) {
+        return res.status(400).json({ message: "Order already accepted by another rider or no longer available." });
+      }
 
       // Mark rider busy
       await RiderModel.findOneAndUpdate({ userId: req.user.userId }, { isAvailable: false });
+
+      // Populate shop for socket
+      const populatedOrder = await OrderTypeModel.findById(order._id)
+        .populate("shopId", "shopName address latitude longitude")
+        .lean();
+
+      const io = req.app.get("io");
+      if (io) {
+        // Notify shop room of assignment
+        io.to(`shop:${order.shopId}`).emit("order:status-changed", populatedOrder);
+        // Tell all other requestedRiders (in original list) to remove this order
+        // We cleared requestedRiders atomically, so emit order:removed to shop room and all rider rooms
+        io.to(`shop:${order.shopId}`).emit("order:accepted", { orderId: order._id, acceptedBy: req.user.userId });
+      }
+
+      return res.json({ success: true, order: populatedOrder });
+
     } else if (action === "reject") {
+      const order = await OrderTypeModel.findById(req.params.orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      if (order.acceptedByRider) return res.status(400).json({ message: "Order already accepted" });
+
       order.requestedRiders = order.requestedRiders.filter(
-        id => id.toString() !== req.user.userId
+        (id) => id.toString() !== req.user.userId
       );
+      await order.save();
+      return res.json({ success: true, message: "Order rejected" });
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }
-
-    await order.save();
-    res.json(order);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -115,6 +142,11 @@ riderrouter.put("/respond-order/:orderId", verifyToken("rider"), async (req, res
 riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res) => {
   try {
     const { status } = req.body;
+    const validStatuses = ["Accepted", "OutForDelivery", "Delivered"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+    }
+
     const order = await OrderTypeModel.findById(req.params.orderId);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
@@ -136,26 +168,52 @@ riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res
       // Earnings calculation
       const shop = await ShopModel.findById(order.shopId);
       let distance = 0;
-      let calculatedAmount = 50;
+      let calculatedAmount = 30; // base fare
       if (shop && order.deliveryLocation?.lat && order.deliveryLocation.lat !== 0) {
-        const rawDist = calculateDistance(shop.latitude, shop.longitude, order.deliveryLocation.lat, order.deliveryLocation.lng);
+        const rawDist = calculateDistance(
+          shop.latitude, shop.longitude,
+          order.deliveryLocation.lat, order.deliveryLocation.lng
+        );
         distance = Math.round(rawDist * 100) / 100;
-        calculatedAmount = Math.max(30, Math.round(distance * 15));
+        // ₹30 base + ₹15 per km
+        calculatedAmount = Math.max(30, Math.round(30 + distance * 15));
       }
 
       let earnings = await EarningsModel.findOne({ riderId });
       if (!earnings) {
-        earnings = new EarningsModel({ riderId, completedOrders: 1, totalEarnings: calculatedAmount, history: [{ orderId: order._id, customerName: order.customerName, amount: calculatedAmount, distance, date: new Date() }] });
+        earnings = new EarningsModel({
+          riderId,
+          completedOrders: 1,
+          totalEarnings: calculatedAmount,
+          history: [{
+            orderId: order._id,
+            customerName: order.customerName,
+            amount: calculatedAmount,
+            distance,
+            date: new Date()
+          }]
+        });
       } else {
-        const alreadyLogged = earnings.history.some(item => item.orderId?.toString() === order._id.toString());
+        const alreadyLogged = earnings.history.some(
+          (item) => item.orderId?.toString() === order._id.toString()
+        );
         if (!alreadyLogged) {
           earnings.completedOrders += 1;
           earnings.totalEarnings += calculatedAmount;
-          earnings.history.push({ orderId: order._id, customerName: order.customerName, amount: calculatedAmount, distance, date: new Date() });
+          earnings.history.push({
+            orderId: order._id,
+            customerName: order.customerName,
+            amount: calculatedAmount,
+            distance,
+            date: new Date()
+          });
         }
       }
       await earnings.save();
-      await RiderModel.findOneAndUpdate({ userId: riderId }, { $inc: { earnings: calculatedAmount } });
+      await RiderModel.findOneAndUpdate(
+        { userId: riderId },
+        { $inc: { earnings: calculatedAmount } }
+      );
     }
 
     if (status === "OutForDelivery" && order.assignedRider) {
@@ -164,10 +222,20 @@ riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res
 
     await order.save();
 
-    const io = req.app.get("io");
-    if (io) io.to(`shop:${order.shopId}`).emit("order:status-changed", order);
+    // Populate shop for full context in socket event
+    const populatedOrder = await OrderTypeModel.findById(order._id)
+      .populate("shopId", "shopName address latitude longitude")
+      .populate("assignedRider", "name phone")
+      .lean();
 
-    res.json(order);
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`shop:${order.shopId}`).emit("order:status-changed", populatedOrder);
+      // Also emit to rider's personal room
+      io.to(`rider:${req.user.userId}`).emit("order:status-changed", populatedOrder);
+    }
+
+    res.json(populatedOrder);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
