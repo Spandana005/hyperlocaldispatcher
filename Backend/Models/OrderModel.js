@@ -49,10 +49,6 @@ const orderSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
-      addressType: {
-        type: String,
-        default: "Home",
-      },
     },
 
     orderDetails: {
@@ -66,14 +62,13 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "Pending",
-        "Assigned",
-        "Accepted",
-        "OutForDelivery",
-        "Delivered",
-        "Cancelled",
+        "OPEN",
+        "ASSIGNED",
+        "PICKED_UP",
+        "DELIVERED",
+        "CANCELLED",
       ],
-      default: "Pending",
+      default: "OPEN",
     },
 
     // =========================

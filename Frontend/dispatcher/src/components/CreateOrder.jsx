@@ -84,7 +84,6 @@ const CreateOrder = () => {
     area: "",
     building: "",
     landmark: "",
-    addressType: "Home",
     orderDetails: "",
   });
 
@@ -196,7 +195,6 @@ const CreateOrder = () => {
           area: formData.area,
           building: formData.building,
           landmark: formData.landmark,
-          addressType: formData.addressType,
         },
         orderDetails: formData.orderDetails,
         latitude,
@@ -231,7 +229,6 @@ const CreateOrder = () => {
         area: "",
         building: "",
         landmark: "",
-        addressType: "Home",
         orderDetails: "",
       });
       setSelectedPosition(null);
@@ -376,32 +373,16 @@ const CreateOrder = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-450">Landmark (Optional)</label>
-                  <input
-                    type="text"
-                    name="landmark"
-                    placeholder="e.g. Near HDFC Bank"
-                    value={formData.landmark}
-                    onChange={handleChange}
-                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-450">Address Type</label>
-                  <select
-                    name="addressType"
-                    value={formData.addressType}
-                    onChange={handleChange}
-                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white cursor-pointer"
-                  >
-                    <option value="Home">Home</option>
-                    <option value="Office">Office</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-450">Landmark (Optional)</label>
+                <input
+                  type="text"
+                  name="landmark"
+                  placeholder="e.g. Near HDFC Bank"
+                  value={formData.landmark}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-white"
+                />
               </div>
             </div>
 
@@ -542,7 +523,7 @@ const CreateOrder = () => {
                 setSelectedPosition({ lat, lng });
                 handleReverseGeocode(lat, lng);
               }} />
-              <ChangeMapCenter center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : null} />
+              <ChangeMapCenter center={selectedPosition ? [selectedPosition.lat, selectedPosition.lng] : (shopPosition ? [shopPosition.lat, shopPosition.lng] : null)} />
             </MapContainer>
           </div>
 

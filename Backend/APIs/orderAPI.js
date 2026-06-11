@@ -97,7 +97,7 @@ router.post("/", verifyToken("admin"), async (req, res) => {
       phone,
       address,
       orderDetails,
-      status: "Pending",
+      status: "OPEN",
       deliveryLocation: { lat: latitude || 0, lng: longitude || 0 },
       deliveryAddress: { fullAddress, lat: latitude || 0, lng: longitude || 0 },
       requestedRiders: availableRiders.map((r) => r.userId),
@@ -164,7 +164,7 @@ router.delete("/:id", verifyToken("admin", "shop_owner"), async (req, res) => {
       }
     }
 
-    if (order.assignedRider && ["Accepted", "OutForDelivery"].includes(order.status)) {
+    if (order.assignedRider && ["ASSIGNED", "PICKED_UP"].includes(order.status)) {
       await RiderModel.findOneAndUpdate({ userId: order.assignedRider }, { isAvailable: true });
     }
 
@@ -205,7 +205,7 @@ router.put("/assign/:id", verifyToken("admin", "shop_owner"), async (req, res) =
     }
 
     order.assignedRider = riderId;
-    order.status = "Assigned";
+    order.status = "ASSIGNED";
     if (!order.requestedRiders.map(id => id.toString()).includes(riderId)) {
       order.requestedRiders.push(riderId);
     }
@@ -246,7 +246,7 @@ router.put("/status/:id", verifyToken("admin", "shop_owner", "rider"), async (re
     order.status = status;
 
     // DELIVERED logic
-    if (status === "Delivered" && prevStatus !== "Delivered") {
+    if (status === "DELIVERED" && prevStatus !== "DELIVERED") {
       const riderId = order.assignedRider || req.user.userId;
 
       // Mark rider available
@@ -294,7 +294,7 @@ router.put("/status/:id", verifyToken("admin", "shop_owner", "rider"), async (re
       await RiderModel.findOneAndUpdate({ userId: riderId }, { $inc: { earnings: calculatedAmount } });
     }
 
-    if (status === "OutForDelivery" && order.assignedRider) {
+    if (status === "PICKED_UP" && order.assignedRider) {
       await RiderModel.findOneAndUpdate({ userId: order.assignedRider }, { isAvailable: false });
     }
 

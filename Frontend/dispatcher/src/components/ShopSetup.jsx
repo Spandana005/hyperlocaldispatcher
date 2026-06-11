@@ -105,18 +105,6 @@ const ShopSetup = () => {
     }
   }, [userObj]);
 
-  // Notifications State
-  const [notifConfig, setNotifConfig] = useState({
-    emailAlerts: true,
-    smsAlerts: true,
-    audioChimes: true,
-    autoDispatch: false
-  });
-
-  // Integrations State
-  const [showApiKey, setShowApiKey] = useState(false);
-  const apiKey = "df_live_9a2b8c4d7e0f1g3h5j7k9m1n3p5q7r9s";
-  const [webhookUrl, setWebhookUrl] = useState("https://api.yourbusiness.com/webhooks/deliveries");
 
   // Load shop coordinates on mount
   useEffect(() => {
@@ -178,13 +166,6 @@ const ShopSetup = () => {
     toast.success("Profile settings saved!");
   };
 
-  const handleNotifSave = () => {
-    toast.success("Notification chimes configuration updated!");
-  };
-
-  const handleIntegrationSave = () => {
-    toast.success("Webhook endpoint url registered!");
-  };
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -224,25 +205,7 @@ const ShopSetup = () => {
             Profile settings
           </button>
 
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-left transition-all cursor-pointer ${
-              activeTab === "notifications" ? "bg-blue-50 text-blue-600" : "text-slate-550 hover:bg-slate-50"
-            }`}
-          >
-            <Bell className="w-4 h-4 shrink-0" />
-            Notifications
-          </button>
 
-          <button
-            onClick={() => setActiveTab("integrations")}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-left transition-all cursor-pointer ${
-              activeTab === "integrations" ? "bg-blue-50 text-blue-600" : "text-slate-550 hover:bg-slate-50"
-            }`}
-          >
-            <Key className="w-4 h-4 shrink-0" />
-            Integrations
-          </button>
 
           <button
             onClick={() => setActiveTab("security")}
@@ -388,113 +351,7 @@ const ShopSetup = () => {
             </form>
           )}
 
-          {/* TAB 3: NOTIFICATIONS SETTINGS */}
-          {activeTab === "notifications" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-black text-slate-850 tracking-tight">Notification Preferences</h3>
-                <p className="text-slate-450 text-[10px] font-semibold mt-0.5">Toggle alert streams and system sound chimes.</p>
-              </div>
 
-              <div className="space-y-4">
-                <label className="flex items-center gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/50 rounded-2xl border border-slate-100 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={notifConfig.emailAlerts}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, emailAlerts: e.target.checked })}
-                    className="rounded text-blue-600 focus:ring-blue-500 h-4.5 w-4.5"
-                  />
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Email dispatch summary</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Send transaction statements and daily delivery summaries.</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/50 rounded-2xl border border-slate-100 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={notifConfig.smsAlerts}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, smsAlerts: e.target.checked })}
-                    className="rounded text-blue-600 focus:ring-blue-500 h-4.5 w-4.5"
-                  />
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">SMS rider pings</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Ping riders via SMS during coordinates assign updates.</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/50 rounded-2xl border border-slate-100 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={notifConfig.audioChimes}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, audioChimes: e.target.checked })}
-                    className="rounded text-blue-600 focus:ring-blue-500 h-4.5 w-4.5"
-                  />
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">Audio sound chimes</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Play alert chime when new dispatch requests created.</p>
-                  </div>
-                </label>
-              </div>
-
-              <button
-                onClick={handleNotifSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
-              >
-                Save Preferences
-              </button>
-            </div>
-          )}
-
-          {/* TAB 4: INTEGRATION SETTINGS */}
-          {activeTab === "integrations" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-black text-slate-850 tracking-tight">API & Webhooks Integration</h3>
-                <p className="text-slate-450 text-[10px] font-semibold mt-0.5">Expose delivery triggers to client websites.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">Live API Key</span>
-                    <button
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="text-[10px] font-bold text-blue-600 hover:underline"
-                    >
-                      {showApiKey ? "Hide Key" : "Reveal Key"}
-                    </button>
-                  </div>
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    value={apiKey}
-                    className="w-full bg-white border border-slate-200 p-3 rounded-xl text-xs font-mono outline-none"
-                    disabled
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1">
-                    <Webhook className="w-4 h-4 text-slate-400" />
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Webhook Endpoint URL</label>
-                  </div>
-                  <input
-                    type="text"
-                    value={webhookUrl}
-                    onChange={(e) => setWebhookUrl(e.target.value)}
-                    className="w-full border border-slate-200 p-3 rounded-xl text-xs outline-none bg-slate-50"
-                  />
-                </div>
-
-                <button
-                  onClick={handleIntegrationSave}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
-                >
-                  Save Integration
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* TAB 5: SECURITY */}
           {activeTab === "security" && (

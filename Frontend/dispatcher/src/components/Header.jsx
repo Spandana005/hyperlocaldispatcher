@@ -4,7 +4,6 @@ import useAuthStore from "../store/authstore.js";
 import useTrackingStore from "../store/trackingstore.js";
 import { Logo } from "./Logo.jsx";
 import { 
-  Bell, 
   Search, 
   Plus, 
   ChevronRight, 
@@ -28,7 +27,6 @@ const Header = () => {
   const stopTracking = useTrackingStore((state) => state.stopTracking);
 
   // States
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("df-theme") || "light");
 
@@ -43,33 +41,6 @@ const Header = () => {
     }
   };
 
-  // Mock Notifications for SaaS look
-  const mockNotifications = [
-    {
-      id: 1,
-      title: "New Dispatch Request",
-      desc: "Incoming order for customer Rahul Verma needs rider assignment.",
-      time: "2 mins ago",
-      icon: <Clock className="w-4 h-4 text-blue-600" />,
-      bg: "bg-blue-50"
-    },
-    {
-      id: 2,
-      title: "Delivery Completed",
-      desc: "Order #84920 has been marked delivered by Rider Karan.",
-      time: "15 mins ago",
-      icon: <CheckCircle className="w-4 h-4 text-green-600" />,
-      bg: "bg-green-50"
-    },
-    {
-      id: 3,
-      title: "Rider Signal Alert",
-      desc: "Rider Varsha has entered busy zone near City Center.",
-      time: "1 hour ago",
-      icon: <ShieldAlert className="w-4 h-4 text-amber-500" />,
-      bg: "bg-amber-50"
-    }
-  ];
 
   // Logout Function
   const handleLogout = () => {
@@ -168,59 +139,13 @@ const Header = () => {
 
         {user ? (
           <>
-            {/* Notification Bell with Simulation Popover */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowProfileMenu(false);
-                }}
-                className={`p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all relative cursor-pointer ${
-                  showNotifications ? "bg-slate-50 border-slate-200" : "bg-white"
-                }`}
-              >
-                <Bell className="w-4 h-4 text-slate-650" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 rounded-full border border-white"></span>
-              </button>
 
-              {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 py-3 overflow-hidden animate-scaleUp">
-                  <div className="px-4 pb-2 border-b border-slate-50 flex items-center justify-between">
-                    <span className="font-extrabold text-sm text-slate-800">Notifications</span>
-                    <button 
-                      onClick={() => {
-                        setShowNotifications(false);
-                        toast.success("Cleared all notifications");
-                      }}
-                      className="text-[10px] font-bold text-blue-600 hover:underline uppercase"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                  <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
-                    {mockNotifications.map((notif) => (
-                      <div key={notif.id} className="p-3.5 hover:bg-slate-50/70 transition-colors flex gap-3 cursor-pointer">
-                        <div className={`p-2.5 rounded-xl shrink-0 h-fit ${notif.bg}`}>
-                          {notif.icon}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-xs text-slate-850 truncate">{notif.title}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{notif.desc}</p>
-                          <span className="text-[9px] text-slate-400 font-semibold block mt-1">{notif.time}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setShowProfileMenu(!showProfileMenu);
-                  setShowNotifications(false);
                 }}
                 className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer"
               >

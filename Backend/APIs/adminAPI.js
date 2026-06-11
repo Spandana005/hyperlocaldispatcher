@@ -93,13 +93,13 @@ adminrouter.patch("/block/:userId", verifyToken("admin"), async (req, res) => {
     if (user.role === "rider") {
       const activeOrder = await OrderTypeModel.findOne({
         assignedRider: req.params.userId,
-        status: { $in: ["Accepted", "OutForDelivery", "Assigned"] },
+        status: { $in: ["ASSIGNED", "PICKED_UP"] },
       });
 
       if (activeOrder) {
         activeOrder.assignedRider = null;
         activeOrder.acceptedByRider = false;
-        activeOrder.status = "Pending";
+        activeOrder.status = "OPEN";
 
         const availableRiders = await RiderModel.find({
           shopId: activeOrder.shopId,
@@ -168,11 +168,11 @@ adminrouter.get("/stats", verifyToken("admin"), async (req, res) => {
       RiderModel.countDocuments({ approvalStatus: "Approved" }),
       RiderModel.countDocuments({ approvalStatus: "Pending" }),
       OrderTypeModel.countDocuments(),
-      OrderTypeModel.countDocuments({ status: "Delivered" }),
-      OrderTypeModel.countDocuments({ status: { $nin: ["Delivered", "Cancelled"] } }),
+      OrderTypeModel.countDocuments({ status: "DELIVERED" }),
+      OrderTypeModel.countDocuments({ status: { $nin: ["DELIVERED", "CANCELLED"] } }),
     ]);
 
-    const recentOrders = await OrderTypeModel.find({ status: "Delivered" })
+    const recentOrders = await OrderTypeModel.find({ status: "DELIVERED" })
       .populate("assignedRider", "name")
       .populate("shopId", "shopName")
       .sort({ deliveredAt: -1, updatedAt: -1 })

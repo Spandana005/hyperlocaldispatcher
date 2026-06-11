@@ -212,14 +212,7 @@ function App() {
             </ProtectedRoute>
           ),
         },
-        {
-          path: "shop/rider-requests",
-          element: (
-            <ProtectedRoute role="shop_owner">
-              <ShopRiders />
-            </ProtectedRoute>
-          ),
-        },
+
         {
           path: "shop/tracking",
           element: (

@@ -202,15 +202,7 @@ const Sidebar = () => {
                 )}
               </Link>
 
-              <Link to="/shop/rider-requests" className={linkStyle("/shop/rider-requests", "shop_owner")}>
-                <UserCheck className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Rider Requests</span>}
-                {isCollapsed && (
-                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
-                    Rider Requests
-                  </span>
-                )}
-              </Link>
+
 
               <Link to="/shop/riders" className={linkStyle("/shop/riders", "shop_owner")}>
                 <Users className="w-5 h-5 shrink-0" />
