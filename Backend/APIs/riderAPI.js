@@ -36,7 +36,7 @@ riderrouter.get("/available-orders", verifyToken("rider"), async (req, res) => {
       shopId: riderProfile.shopId,  // Only orders from rider's shop
       requestedRiders: { $elemMatch: { $eq: req.user.userId } },
       acceptedByRider: false,
-      status: "OPEN",
+      status: "Pending",
     });
 
     res.json(orders);
@@ -52,7 +52,7 @@ riderrouter.get("/my-orders", verifyToken("rider"), async (req, res) => {
   try {
     const orders = await OrderTypeModel.find({
       assignedRider: req.user.userId,
-      status: { $in: ["ASSIGNED", "PICKED_UP"] },
+      status: { $in: ["Assigned", "Accepted", "OutForDelivery"] },
     }).populate("shopId", "shopName address");
 
     res.json(orders);
@@ -80,7 +80,7 @@ riderrouter.put("/respond-order/:orderId", verifyToken("rider"), async (req, res
         {
           _id: req.params.orderId,
           acceptedByRider: false,
-          status: "OPEN",
+          status: "Pending",
           requestedRiders: req.user.userId,
           shopId: riderProfile.shopId,
         },
@@ -88,7 +88,7 @@ riderrouter.put("/respond-order/:orderId", verifyToken("rider"), async (req, res
           $set: {
             assignedRider: req.user.userId,
             acceptedByRider: true,
-            status: "ASSIGNED",
+            status: "Accepted",
             requestedRiders: [],
           },
         },
@@ -142,7 +142,7 @@ riderrouter.put("/respond-order/:orderId", verifyToken("rider"), async (req, res
 riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ["ASSIGNED", "PICKED_UP", "DELIVERED"];
+    const validStatuses = ["Accepted", "OutForDelivery", "Delivered"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
     }
@@ -157,7 +157,7 @@ riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res
     const prevStatus = order.status;
     order.status = status;
 
-    if (status === "DELIVERED" && prevStatus !== "DELIVERED") {
+    if (status === "Delivered" && prevStatus !== "Delivered") {
       const riderId = req.user.userId;
       await RiderModel.findOneAndUpdate({ userId: riderId }, { isAvailable: true });
 
@@ -216,7 +216,7 @@ riderrouter.put("/update-status/:orderId", verifyToken("rider"), async (req, res
       );
     }
 
-    if (status === "PICKED_UP" && order.assignedRider) {
+    if (status === "OutForDelivery" && order.assignedRider) {
       await RiderModel.findOneAndUpdate({ userId: order.assignedRider }, { isAvailable: false });
     }
 
@@ -253,7 +253,7 @@ riderrouter.put("/update-location/:orderId", verifyToken("rider"), async (req, r
     if (order.assignedRider?.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Not your order" });
     }
-    if (order.status === "DELIVERED") {
+    if (order.status === "Delivered") {
       return res.status(400).json({ message: "Order already delivered" });
     }
 

@@ -284,7 +284,7 @@ shopOwnerRouter.post("/orders", verifyToken("shop_owner"), async (req, res) => {
       phone,
       address,
       orderDetails,
-      status: "OPEN",
+      status: "Pending",
       deliveryLocation: { lat: latitude, lng: longitude },
       deliveryAddress: { fullAddress, lat: latitude, lng: longitude },
       requestedRiders: riderUserIds,
@@ -340,7 +340,7 @@ shopOwnerRouter.put("/orders/assign/:orderId", verifyToken("shop_owner"), async 
     }
 
     order.assignedRider = riderId;
-    order.status = "ASSIGNED";
+    order.status = "Assigned";
     if (!order.requestedRiders.map(id => id.toString()).includes(riderId)) {
       order.requestedRiders.push(riderId);
     }
@@ -373,7 +373,7 @@ shopOwnerRouter.delete("/orders/:orderId", verifyToken("shop_owner"), async (req
     }
 
     // If rider is assigned, free them up
-    if (order.assignedRider && ["ASSIGNED", "PICKED_UP"].includes(order.status)) {
+    if (order.assignedRider && ["Assigned", "Accepted", "OutForDelivery"].includes(order.status)) {
       await RiderModel.findOneAndUpdate(
         { userId: order.assignedRider },
         { isAvailable: true }
@@ -409,8 +409,8 @@ shopOwnerRouter.get("/stats", verifyToken("shop_owner"), async (req, res) => {
       pendingRiders,
     ] = await Promise.all([
       OrderTypeModel.countDocuments({ shopId: shop._id }),
-      OrderTypeModel.countDocuments({ shopId: shop._id, status: "DELIVERED" }),
-      OrderTypeModel.countDocuments({ shopId: shop._id, status: { $nin: ["DELIVERED", "CANCELLED"] } }),
+      OrderTypeModel.countDocuments({ shopId: shop._id, status: "Delivered" }),
+      OrderTypeModel.countDocuments({ shopId: shop._id, status: { $nin: ["Delivered", "Cancelled"] } }),
       RiderModel.countDocuments({ shopId: shop._id, approvalStatus: "Approved" }),
       RiderModel.countDocuments({ shopId: shop._id, approvalStatus: "Pending" }),
     ]);
@@ -459,7 +459,7 @@ shopOwnerRouter.get("/rider-analytics", verifyToken("shop_owner"), async (req, r
       const completedOrders = await OrderTypeModel.find({
         shopId: shop._id,
         assignedRider: riderId,
-        status: "DELIVERED"
+        status: "Delivered"
       });
 
       // 2. Fetch Avg Delivery Time (in minutes)
@@ -503,7 +503,7 @@ shopOwnerRouter.get("/rider-analytics", verifyToken("shop_owner"), async (req, r
       const acceptedCount = await OrderTypeModel.countDocuments({
         shopId: shop._id,
         assignedRider: riderId,
-        status: { $in: ["ASSIGNED", "PICKED_UP", "DELIVERED"] }
+        status: { $in: ["Assigned", "Accepted", "OutForDelivery", "Delivered"] }
       });
       const acceptanceRate = opportunities > 0 ? Math.round((acceptedCount / opportunities) * 100) : 100;
 

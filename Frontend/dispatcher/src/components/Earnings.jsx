@@ -153,52 +153,6 @@ const Earnings = () => {
             {/* Column 1 (2/3 width): Weekly payouts visual chart & Daily summary */}
             <div className="lg:col-span-2 space-y-8">
               
-              {/* Inline SVG Chart */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm">Earnings Activity</h3>
-                    <p className="text-[10px] text-slate-450 font-semibold mt-0.5">Visual representation of weekly distance payouts</p>
-                  </div>
-                  <span className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    <TrendingUp className="w-3.5 h-3.5" /> +15% Payout rate
-                  </span>
-                </div>
-
-                <div className="w-full h-40 bg-slate-50/50 border border-slate-100/50 rounded-2xl p-2 relative">
-                  <svg viewBox="0 0 600 120" className="w-full h-full">
-                    {/* Grid Lines */}
-                    <line x1="40" y1="20" x2="560" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="40" y1="60" x2="560" y2="60" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="40" y1="100" x2="560" y2="100" stroke="#f1f5f9" strokeWidth="1" />
-                    
-                    {/* Bar chart representing payouts weekly */}
-                    {/* Mon */}
-                    <rect x="75" y="40" width="18" height="60" fill="#10B981" rx="4" />
-                    {/* Tue */}
-                    <rect x="150" y="60" width="18" height="40" fill="#10B981" rx="4" />
-                    {/* Wed */}
-                    <rect x="225" y="30" width="18" height="70" fill="#10B981" rx="4" />
-                    {/* Thu */}
-                    <rect x="300" y="80" width="18" height="20" fill="#10B981" rx="4" />
-                    {/* Fri */}
-                    <rect x="375" y="25" width="18" height="75" fill="#10B981" rx="4" />
-                    {/* Sat */}
-                    <rect x="450" y="10" width="18" height="90" fill="#2563EB" rx="4" />
-                    {/* Sun */}
-                    <rect x="525" y="15" width="18" height="85" fill="#2563EB" rx="4" />
-                    
-                    {/* Axis Labels */}
-                    <text x="84" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">M</text>
-                    <text x="159" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">T</text>
-                    <text x="234" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">W</text>
-                    <text x="309" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">T</text>
-                    <text x="384" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">F</text>
-                    <text x="459" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">S</text>
-                    <text x="534" y="115" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">S</text>
-                  </svg>
-                </div>
-              </div>
 
               {/* Daily completed breakdown table */}
               <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">

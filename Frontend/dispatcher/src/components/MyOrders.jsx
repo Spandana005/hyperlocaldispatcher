@@ -14,7 +14,6 @@ import {
   Clock, 
   Package, 
   ChevronRight,
-  ShieldCheck,
   Compass,
   AlertCircle
 } from "lucide-react";
@@ -106,6 +105,8 @@ const MyOrders = () => {
       await API.put(`/api/rider/respond-order/${orderId}`, { action });
       if (action === "accept") {
         toast.success("Order accepted! Shipments added to assignments.");
+        console.log(`[MY ORDERS] Order ${orderId} accepted. Starting location tracking.`);
+        startTracking(orderId);
       } else {
         toast.error("Order request rejected.");
       }
@@ -122,10 +123,7 @@ const MyOrders = () => {
       toast.success(`Shipment marked as ${status === "OutForDelivery" ? "Out For Delivery" : status}!`);
 
       // Geolocation live tracking reaction
-      if (status === "OutForDelivery") {
-        console.log(`[MY ORDERS] Order ${orderId} dispatched. Starting location tracking.`);
-        startTracking(orderId);
-      } else if (status === "Delivered") {
+      if (status === "Delivered") {
         console.log(`[MY ORDERS] Order ${orderId} delivered. Stopping location tracking.`);
         await stopTracking();
       }
@@ -321,33 +319,6 @@ const MyOrders = () => {
         </div>
       </div>
 
-      {/* STATUS GUIDE */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-50 pb-2.5">
-          <ShieldCheck className="w-5 h-5 text-blue-600" /> Delivery Status Guide
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-semibold">
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-amber-600 uppercase tracking-wide">🟡 Assigned</h3>
-            <p className="text-slate-500 leading-relaxed">
-              Order dispatch registered by admin. Waiting for courier review and approval.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-blue-600 uppercase tracking-wide">🔵 Dispatched</h3>
-            <p className="text-slate-500 leading-relaxed">
-              Rider is on trip. Live GPS broadcast is syncing route updates to administrative hub.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-green-600 uppercase tracking-wide">🟢 Delivered</h3>
-            <p className="text-slate-500 leading-relaxed">
-              Shipment completed successfully. Payout earnings are automatically credited to ledger history.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

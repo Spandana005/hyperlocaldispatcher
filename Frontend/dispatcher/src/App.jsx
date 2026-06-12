@@ -14,10 +14,9 @@ import Register from "./components/Register";
 
 // Admin Pages
 import AdminDashboard from "./components/AdminDashboard";
+import ManageUsers from "./components/ManageUsers";
+import BusinessSettings from "./components/BusinessSettings";
 import CreateOrder from "./components/CreateOrder";
-import Orders from "./components/Orders";
-import Riders from "./components/Riders";
-import LiveTracking from "./components/LiveTracking";
 import ShopSetup from "./components/ShopSetup";
 // Rider Pages
 import RiderDashboard from "./components/RiderDashboard";
@@ -76,52 +75,20 @@ function App() {
         },
 
         {
-          path: "admin/create-order",
+          path: "admin/users",
           element: (
             <ProtectedRoute role="admin">
-              <CreateOrder />
+              <ManageUsers />
             </ProtectedRoute>
           ),
         },
 
         {
-          path: "admin/orders",
+          path: "admin/settings",
           element: (
             <ProtectedRoute role="admin">
-              <Orders />
+              <BusinessSettings />
             </ProtectedRoute>
-          ),
-        },
-
-        {
-          path: "admin/riders",
-          element: (
-            <ProtectedRoute role="admin">
-              <Riders />
-            </ProtectedRoute>
-          ),
-        },
-
-        {
-          path: "admin/tracking",
-          element: (
-            <ProtectedRoute role="admin">
-              <LiveTracking />
-            </ProtectedRoute>
-          ),
-        },
-
-        {
-          path: "admin/shop-setup",
-        
-          element: (
-        
-            <ProtectedRoute role="admin">
-        
-              <ShopSetup />
-        
-            </ProtectedRoute>
-        
           ),
         },
 

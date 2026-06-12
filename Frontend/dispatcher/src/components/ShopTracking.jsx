@@ -100,7 +100,7 @@ const ShopTracking = () => {
           // Filter for only active delivery statuses: Accepted, OutForDelivery
           // Also show Pending orders just in case, but keep focus on Accepted/OutForDelivery
           const activeOrders = ordersRes.data.orders.filter(o => 
-            ["Pending", "Assigned", "Accepted", "OutForDelivery"].includes(o.status)
+            ["Assigned", "Accepted", "OutForDelivery"].includes(o.status)
           );
           setOrders(activeOrders);
           

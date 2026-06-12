@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import io from "socket.io-client";
 import useShopStore from "../store/shopStore";
 import useApprovalStore from "../store/approvalStore";
 import { 
@@ -56,6 +57,36 @@ const ShopDashboard = () => {
     };
     initDashboard();
   }, []);
+
+  useEffect(() => {
+    if (!shop?._id) return;
+
+    const socketUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:4000";
+    const socket = io(socketUrl);
+
+    socket.on("connect", () => {
+      socket.emit("join-shop", shop._id);
+    });
+
+    socket.on("order:status-changed", () => {
+      fetchStats();
+      fetchOrders({ limit: 5 });
+    });
+
+    socket.on("order:new-assigned", () => {
+      fetchStats();
+      fetchOrders({ limit: 5 });
+    });
+
+    socket.on("order:new", () => {
+      fetchStats();
+      fetchOrders({ limit: 5 });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [shop?._id]);
 
   const handleCopyCode = () => {
     if (shop?.shopCode) {
@@ -397,7 +428,7 @@ const ShopDashboard = () => {
                 className="w-full border border-slate-200 p-3.5 rounded-xl text-xs outline-none bg-slate-50 cursor-pointer"
               >
                 <option value="">-- Select Rider --</option>
-                {useShopStore.getState().riders
+                {Array.isArray(useShopStore.getState().riders) && useShopStore.getState().riders
                   .filter((r) => r.isAvailable)
                   .map((r) => (
                     <option key={r.userId?._id} value={r.userId?._id}>
@@ -406,7 +437,7 @@ const ShopDashboard = () => {
                   ))}
               </select>
 
-              {useShopStore.getState().riders.filter((r) => r.isAvailable).length === 0 && (
+              {(Array.isArray(useShopStore.getState().riders) ? useShopStore.getState().riders : []).filter((r) => r.isAvailable).length === 0 && (
                 <div className="flex gap-2 p-3 bg-rose-50 text-rose-700 border border-rose-100/50 rounded-xl text-[10px] font-bold uppercase items-center">
                   <AlertCircle className="w-4.5 h-4.5 shrink-0" />
                   <span>No available riders right now.</span>

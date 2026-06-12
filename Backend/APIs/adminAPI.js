@@ -77,10 +77,14 @@ adminrouter.get("/orders", verifyToken("admin"), async (req, res) => {
 // =============================================
 // 5. BLOCK USER
 // =============================================
-adminrouter.patch("/block/:userId", verifyToken("admin"), async (req, res) => {
+adminrouter.patch("/users/:id/block", verifyToken("admin"), async (req, res) => {
   try {
+    if (req.params.id === req.user.userId) {
+      return res.status(403).json({ message: "Admins cannot block themselves." });
+    }
+
     const user = await UserTypeModel.findByIdAndUpdate(
-      req.params.userId,
+      req.params.id,
       { isActive: false, isBlocked: true },
       { new: true }
     ).select("-password");
@@ -92,7 +96,7 @@ adminrouter.patch("/block/:userId", verifyToken("admin"), async (req, res) => {
     // If rider was in active delivery, unassign
     if (user.role === "rider") {
       const activeOrder = await OrderTypeModel.findOne({
-        assignedRider: req.params.userId,
+        assignedRider: req.params.id,
         status: { $in: ["ASSIGNED", "PICKED_UP"] },
       });
 
@@ -113,7 +117,7 @@ adminrouter.patch("/block/:userId", verifyToken("admin"), async (req, res) => {
         if (io) {
           io.emit("order:status-changed", activeOrder);
           io.emit("admin:rider-blocked-delivery-unassigned", {
-            riderId: req.params.userId,
+            riderId: req.params.id,
             orderId: activeOrder._id,
           });
         }
@@ -129,10 +133,10 @@ adminrouter.patch("/block/:userId", verifyToken("admin"), async (req, res) => {
 // =============================================
 // 6. UNBLOCK USER
 // =============================================
-adminrouter.patch("/unblock/:userId", verifyToken("admin"), async (req, res) => {
+adminrouter.patch("/users/:id/unblock", verifyToken("admin"), async (req, res) => {
   try {
     const user = await UserTypeModel.findByIdAndUpdate(
-      req.params.userId,
+      req.params.id,
       { isActive: true, isBlocked: false },
       { new: true }
     ).select("-password");

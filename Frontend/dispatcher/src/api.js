@@ -134,8 +134,8 @@ export const getAdminUsers = () => API.get("/api/admin/users");
 export const getAdminShops = () => API.get("/api/admin/shops");
 export const getAdminRiders = () => API.get("/api/admin/riders");
 export const getAdminOrders = (params) => API.get("/api/admin/orders", { params });
-export const blockUser = (userId) => API.patch(`/api/admin/block/${userId}`);
-export const unblockUser = (userId) => API.patch(`/api/admin/unblock/${userId}`);
+export const blockUser = (userId) => API.patch(`/api/admin/users/${userId}/block`);
+export const unblockUser = (userId) => API.patch(`/api/admin/users/${userId}/unblock`);
 
 // ==========================
 // SHOP OWNER APIs

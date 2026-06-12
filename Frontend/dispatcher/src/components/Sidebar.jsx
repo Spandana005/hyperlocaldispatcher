@@ -72,47 +72,17 @@ const Sidebar = () => {
                 )}
               </Link>
 
-              <Link to="/admin/create-order" className={linkStyle("/admin/create-order", "admin")}>
-                <PlusCircle className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Create Order</span>}
+              <Link to="/admin/users" className={linkStyle("/admin/users", "admin")}>
+                <ShieldCheck className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span>Manage Users</span>}
                 {isCollapsed && (
                   <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
-                    Create Order
+                    Manage Users
                   </span>
                 )}
               </Link>
 
-              <Link to="/admin/orders" className={linkStyle("/admin/orders", "admin")}>
-                <Package className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Orders Log</span>}
-                {isCollapsed && (
-                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
-                    Orders Log
-                  </span>
-                )}
-              </Link>
-
-              <Link to="/admin/riders" className={linkStyle("/admin/riders", "admin")}>
-                <Users className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Riders Hub</span>}
-                {isCollapsed && (
-                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
-                    Riders Hub
-                  </span>
-                )}
-              </Link>
-
-              <Link to="/admin/tracking" className={linkStyle("/admin/tracking", "admin")}>
-                <MapPin className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Operations Hub</span>}
-                {isCollapsed && (
-                  <span className="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30">
-                    Operations Hub
-                  </span>
-                )}
-              </Link>
-              
-              <Link to="/admin/shop-setup" className={linkStyle("/admin/shop-setup", "admin")}>
+              <Link to="/admin/settings" className={linkStyle("/admin/settings", "admin")}>
                 <Settings className="w-5 h-5 shrink-0" />
                 {!isCollapsed && <span>Business Settings</span>}
                 {isCollapsed && (

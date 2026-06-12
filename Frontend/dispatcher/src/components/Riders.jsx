@@ -37,7 +37,7 @@ const Riders = () => {
   const fetchRiders = async () => {
     try {
       const res = await API.get("/api/admin/riders");
-      setRiders(res.data);
+      setRiders(res.data.riders || []);
     } catch (err) {
       console.error("Error fetching riders:", err);
     }

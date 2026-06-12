@@ -213,7 +213,7 @@ const ShopOrders = () => {
                 className="w-full border border-slate-200 p-3.5 rounded-xl text-xs outline-none bg-slate-50 cursor-pointer"
               >
                 <option value="">-- Select Rider --</option>
-                {riders
+                {(Array.isArray(riders) ? riders : [])
                   .filter((r) => r.isAvailable)
                   .map((r) => (
                     <option key={r.userId?._id} value={r.userId?._id}>
@@ -222,7 +222,7 @@ const ShopOrders = () => {
                   ))}
               </select>
 
-              {riders.filter((r) => r.isAvailable).length === 0 && (
+              {(Array.isArray(riders) ? riders : []).filter((r) => r.isAvailable).length === 0 && (
                 <div className="flex gap-2 p-3 bg-rose-50 text-rose-700 border border-rose-100/50 rounded-xl text-[10px] font-bold uppercase items-center">
                   <AlertCircle className="w-4.5 h-4.5 shrink-0" />
                   <span>No available riders right now.</span>
