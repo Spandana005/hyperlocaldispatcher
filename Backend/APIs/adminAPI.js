@@ -97,7 +97,7 @@ adminrouter.patch("/users/:id/block", verifyToken("admin"), async (req, res) => 
     if (user.role === "rider") {
       const activeOrder = await OrderTypeModel.findOne({
         assignedRider: req.params.id,
-        status: { $in: ["ASSIGNED", "PICKED_UP"] },
+        status: { $in: ["Assigned", "Accepted", "OutForDelivery"] },//"ASSIGNED", "PICKED_UP"
       });
 
       if (activeOrder) {
