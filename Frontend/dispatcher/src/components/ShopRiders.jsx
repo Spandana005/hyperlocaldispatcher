@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import useShopStore from "../store/shopStore";
-import useApprovalStore from "../store/approvalStore";
+import useShopStore from "../store/shopstore";
+import useApprovalStore from "../store/approvalstore";
 import { 
   Users, 
   UserCheck, 

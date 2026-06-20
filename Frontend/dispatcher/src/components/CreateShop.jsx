@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useShopStore from "../store/shopStore";
+import useShopStore from "../store/shopstore";
 import useAuthStore from "../store/authstore";
 import { 
   Store, 

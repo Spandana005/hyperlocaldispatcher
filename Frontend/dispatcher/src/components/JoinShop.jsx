@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useRiderStore from "../store/riderStore";
+import useRiderStore from "../store/riderstore";
 import useAuthStore from "../store/authstore";
 import { 
   Compass, 

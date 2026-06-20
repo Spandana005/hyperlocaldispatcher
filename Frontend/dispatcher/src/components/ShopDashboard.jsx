@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
-import useShopStore from "../store/shopStore";
-import useApprovalStore from "../store/approvalStore";
+import useShopStore from "../store/shopstore";
+import useApprovalStore from "../store/approvalstore";
 import { 
   Store, 
   Copy, 

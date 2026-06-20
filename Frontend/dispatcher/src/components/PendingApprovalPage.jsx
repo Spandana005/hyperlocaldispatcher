@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../store/authstore";
-import useRiderStore from "../store/riderStore";
+import useRiderStore from "../store/riderstore";
 import { 
   Clock, 
   XCircle, 

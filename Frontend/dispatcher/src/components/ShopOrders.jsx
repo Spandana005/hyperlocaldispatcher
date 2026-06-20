@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import useShopStore from "../store/shopStore";
+import useShopStore from "../store/shopstore";
 import { 
   Package, 
   Search, 
