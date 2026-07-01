@@ -138,7 +138,7 @@ const ShopTracking = () => {
 
     // Handle real-time rider location updates
     socket.on("rider:location-update", (data) => {
-      console.log("[SHOP TRACKING] Live rider location update received:", data);
+      console.log("[SHOP TRACKING] Admin receives socket event: rider:location-update", data);
       
       setOrders(prevOrders => 
         prevOrders.map(order => {
@@ -203,8 +203,10 @@ const ShopTracking = () => {
     }
     if (
       ["Accepted", "OutForDelivery"].includes(selectedOrder?.status) &&
-      selectedOrder?.riderLocation?.lat &&
-      selectedOrder?.riderLocation?.lng
+      selectedOrder?.riderLocation?.lat !== undefined &&
+      selectedOrder?.riderLocation?.lng !== undefined &&
+      selectedOrder?.riderLocation?.lat !== 0 &&
+      selectedOrder?.riderLocation?.lng !== 0
     ) {
       markers.push([selectedOrder.riderLocation.lat, selectedOrder.riderLocation.lng]);
     }
@@ -221,8 +223,10 @@ const ShopTracking = () => {
     const shopCoords = [shop.latitude, shop.longitude];
     const customerCoords = [selectedOrder.deliveryLocation.lat, selectedOrder.deliveryLocation.lng];
     const hasRider = ["Accepted", "OutForDelivery"].includes(selectedOrder.status) &&
-      selectedOrder.riderLocation?.lat &&
-      selectedOrder.riderLocation?.lng;
+      selectedOrder.riderLocation?.lat !== undefined &&
+      selectedOrder.riderLocation?.lng !== undefined &&
+      selectedOrder.riderLocation?.lat !== 0 &&
+      selectedOrder.riderLocation?.lng !== 0;
 
     const riderCoords = hasRider ? [selectedOrder.riderLocation.lat, selectedOrder.riderLocation.lng] : null;
 
@@ -379,8 +383,10 @@ const ShopTracking = () => {
                 {/* Rider Live Marker */}
                 {selectedOrder &&
                   ["Accepted", "OutForDelivery"].includes(selectedOrder.status) &&
-                  selectedOrder.riderLocation?.lat &&
-                  selectedOrder.riderLocation?.lng && (
+                  selectedOrder.riderLocation?.lat !== undefined &&
+                  selectedOrder.riderLocation?.lng !== undefined &&
+                  selectedOrder.riderLocation?.lat !== 0 &&
+                  selectedOrder.riderLocation?.lng !== 0 && (
                     <Marker
                       position={[selectedOrder.riderLocation.lat, selectedOrder.riderLocation.lng]}
                       icon={riderIcon}

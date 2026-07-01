@@ -76,7 +76,7 @@ const RiderDashboard = () => {
 
       // Geolocation Live tracking reaction:
       if (newStatus === "OutForDelivery") {
-        console.log(`[RIDER DASHBOARD] Order ${orderId} dispatched. Starting location tracking.`);
+        console.log(`[RIDER DASHBOARD] Order ${orderId} outfordelivery (Start Delivery clicked). Starting location tracking.`);
         startTracking(orderId);
       } else if (newStatus === "Delivered") {
         console.log(`[RIDER DASHBOARD] Order ${orderId} delivered. Stopping location tracking.`);

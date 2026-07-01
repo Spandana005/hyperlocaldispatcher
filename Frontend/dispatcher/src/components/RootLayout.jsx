@@ -51,13 +51,13 @@ const RootLayout = () => {
         return;
       }
 
-      // 2. Fetch rider's orders to check if any are in 'dispatched' (Out for delivery) status
+      // 2. Fetch rider's orders to check if any are in 'outfordelivery' (Out for delivery) status
       try {
         console.log("[ROOT TRACKING MANAGER] Querying active dispatch tasks for rider location sync...");
         const res = await API.get("/api/rider/my-orders");
         if (!isSubscribed) return;
 
-        const dispatchedOrder = res.data.find(order => order.status === "dispatched");
+        const dispatchedOrder = res.data.find(order => order.status?.toLowerCase() === "outfordelivery");
 
         if (dispatchedOrder) {
           console.log(`[ROOT TRACKING MANAGER] Dispatched order found: ${dispatchedOrder._id}. Resuming tracking.`);

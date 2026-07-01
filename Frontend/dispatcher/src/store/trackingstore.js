@@ -39,6 +39,7 @@ const useTrackingStore = create((set, get) => {
       });
 
       // 1. Start navigator.geolocation.watchPosition to keep GPS active and receive coordinate changes
+      console.log("[TRACKING STORE] watchPosition started");
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -50,12 +51,18 @@ const useTrackingStore = create((set, get) => {
           if (error.code === error.PERMISSION_DENIED) {
             toast.error("Location permission denied. Real-time dispatch tracking disabled.");
             get().stopTracking();
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            toast.error("Location information is unavailable.");
+          } else if (error.code === error.TIMEOUT) {
+            toast.error("The request to get user location timed out.");
+          } else {
+            toast.error("An unknown error occurred while getting location.");
           }
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
 
-      // 2. Set interval to send the coordinates to backend every 10 seconds
+      // 2. Set interval to send the coordinates to backend every 3 seconds
       const intervalId = setInterval(async () => {
         const activeOrder = get().activeOrderId;
         if (!activeOrder) return;
@@ -63,10 +70,9 @@ const useTrackingStore = create((set, get) => {
         if (latestCoords) {
           try {
             console.log(`[TRACKING STORE] Syncing coords to backend: Lat=${latestCoords.latitude}, Lng=${latestCoords.longitude}, Order=${activeOrder}`);
-            await API.post("/api/location/update", {
-              latitude: latestCoords.latitude,
-              longitude: latestCoords.longitude,
-              orderId: activeOrder,
+            await API.put(`/api/rider/update-location/${activeOrder}`, {
+              lat: latestCoords.latitude,
+              lng: latestCoords.longitude,
             });
           } catch (err) {
             console.error("[TRACKING STORE] Failed to upload location:", err.message);
@@ -74,7 +80,7 @@ const useTrackingStore = create((set, get) => {
         } else {
           console.warn("[TRACKING STORE] GPS watch position is active but coordinates are not resolved yet");
         }
-      }, 10000); // Send updates every 10 seconds
+      }, 3000); // Send updates every 3 seconds
 
       set({
         watchId,

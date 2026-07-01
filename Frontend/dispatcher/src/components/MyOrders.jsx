@@ -105,8 +105,7 @@ const MyOrders = () => {
       await API.put(`/api/rider/respond-order/${orderId}`, { action });
       if (action === "accept") {
         toast.success("Order accepted! Shipments added to assignments.");
-        console.log(`[MY ORDERS] Order ${orderId} accepted. Starting location tracking.`);
-        startTracking(orderId);
+        console.log(`[MY ORDERS] Order ${orderId} accepted. No tracking until OutForDelivery.`);
       } else {
         toast.error("Order request rejected.");
       }
@@ -123,7 +122,10 @@ const MyOrders = () => {
       toast.success(`Shipment marked as ${status === "OutForDelivery" ? "Out For Delivery" : status}!`);
 
       // Geolocation live tracking reaction
-      if (status === "Delivered") {
+      if (status === "OutForDelivery") {
+        console.log(`[MY ORDERS] Order ${orderId} outfordelivery (Start Delivery clicked). Starting location tracking.`);
+        startTracking(orderId);
+      } else if (status === "Delivered") {
         console.log(`[MY ORDERS] Order ${orderId} delivered. Stopping location tracking.`);
         await stopTracking();
       }
@@ -143,7 +145,7 @@ const MyOrders = () => {
             Orders Board
           </h1>
           <p className="text-slate-550 mt-1 text-xs font-semibold">
-            Claim available local requests and manage active dispatched orders.
+            Claim available local requests and manage active outfordelivery orders.
           </p>
         </div>
       </div>

@@ -87,7 +87,7 @@ router.post("/deactivate", verifyToken("rider"), async (req, res) => {
     await RiderLocationModel.deleteOne({ riderId });
 
     await OrderTypeModel.updateMany(
-      { assignedRider: riderId, status: { $ne: "DELIVERED" } },
+      { assignedRider: riderId, status: { $ne: "Delivered" } },
       { $set: { riderLocation: { lat: 0, lng: 0 } } }
     );
 

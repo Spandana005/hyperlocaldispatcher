@@ -269,6 +269,7 @@ riderrouter.put("/update-location/:orderId", verifyToken("rider"), async (req, r
 
     const io = req.app.get("io");
     if (io) {
+      console.log(`[BACKEND] Backend emits socket event: rider:location-update for rider ${req.user.userId}`);
       io.to(`shop:${order.shopId}`).emit("rider:location-update", {
         riderId: req.user.userId,
         latitude: lat,

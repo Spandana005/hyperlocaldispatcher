@@ -180,7 +180,7 @@ const LiveTracking = () => {
 
       // 4. Calculate Stats
       const activeRCount = ridersRes.data.filter(r => r.isActive && !r.isBlocked).length;
-      const pendingOCount = ordersRes.data.filter(o => ["pending", "assigned", "accepted", "dispatched"].includes(o.status.toLowerCase())).length;
+      const pendingOCount = ordersRes.data.filter(o => ["pending", "assigned", "accepted", "outfordelivery"].includes(o.status.toLowerCase())).length;
       const deliveredOCount = ordersRes.data.filter(o => o.status.toLowerCase() === "delivered").length;
       const blockedRCount = ridersRes.data.filter(r => !r.isActive || r.isBlocked).length;
 
@@ -216,7 +216,7 @@ const LiveTracking = () => {
 
     // Handle Live GPS updates
     socket.on("rider:location-update", (data) => {
-      console.log("WebSocket live rider coordinate update:", data);
+      console.log("Admin receives socket event: rider:location-update", data);
       
       // Instantly update the coordinates of the rider in state
       setRiders(prevRiders => 
@@ -446,13 +446,13 @@ const LiveTracking = () => {
     const list = [];
     if (shopCoords) list.push(shopCoords);
     orders.forEach(order => {
-      if (order.deliveryAddress?.lat && order.deliveryAddress?.lng && 
-          ["pending", "assigned", "accepted", "dispatched"].includes(order.status.toLowerCase())) {
+      if (order.deliveryAddress?.lat !== undefined && order.deliveryAddress?.lng !== undefined && 
+          ["pending", "assigned", "accepted", "outfordelivery"].includes(order.status.toLowerCase())) {
         list.push([order.deliveryAddress.lat, order.deliveryAddress.lng]);
       }
     });
     riders.forEach(rider => {
-      if (rider.isActive && !rider.isBlocked && rider.location?.coordinates?.[1] && rider.location?.coordinates?.[0]) {
+      if (rider.isActive && !rider.isBlocked && rider.location?.coordinates?.[1] !== undefined && rider.location?.coordinates?.[0] !== undefined) {
         list.push([rider.location.coordinates[1], rider.location.coordinates[0]]);
       }
     });
@@ -651,12 +651,12 @@ const LiveTracking = () => {
             </Marker>
           )}
 
-          {/* Customer marker points (Dispatched or Accepted) */}
+          {/* Customer marker points (OutForDelivery or Accepted) */}
           {orders
             .filter(order => {
               const status = order.status.toLowerCase();
-              return ["accepted", "dispatched"].includes(status) && 
-                     order.deliveryAddress?.lat && order.deliveryAddress?.lng;
+              return ["accepted", "outfordelivery"].includes(status) && 
+                     order.deliveryAddress?.lat !== undefined && order.deliveryAddress?.lng !== undefined;
             })
             .map(order => (
               <Marker
@@ -685,7 +685,7 @@ const LiveTracking = () => {
           {/* Riders coordinates tracking markers */}
           {(() => {
             const activeRiderIds = orders
-              .filter(order => order.status === "dispatched")
+              .filter(order => order.status.toLowerCase() === "outfordelivery")
               .map(order => {
                 const r = order.assignedRider;
                 return r?._id || r;
@@ -694,7 +694,7 @@ const LiveTracking = () => {
 
             return riders
               .filter(rider => {
-                const hasCoordinates = rider.location?.coordinates?.[1] && rider.location?.coordinates?.[0];
+                const hasCoordinates = rider.location?.coordinates?.[1] !== undefined && rider.location?.coordinates?.[0] !== undefined;
                 const isActiveDelivery = activeRiderIds.includes(rider._id);
                 return rider.isActive && !rider.isBlocked && hasCoordinates && isActiveDelivery;
               })
@@ -800,7 +800,7 @@ const LiveTracking = () => {
                     </div>
                   ) : (
                     orders.map(order => {
-                      const isActive = ["pending", "assigned", "accepted", "dispatched"].includes(order.status.toLowerCase());
+                      const isActive = ["pending", "assigned", "accepted", "outfordelivery"].includes(order.status.toLowerCase());
                       return (
                         <div
                           key={order._id}
@@ -821,7 +821,7 @@ const LiveTracking = () => {
                             <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shrink-0
                               ${order.status.toLowerCase() === "delivered" ? "bg-green-50 text-green-700 border-green-150" : ""}
                               ${order.status.toLowerCase() === "pending" ? "bg-amber-50 text-amber-700 border-amber-150" : ""}
-                              ${order.status.toLowerCase() === "dispatched" ? "bg-purple-50 text-purple-700 border-purple-150" : ""}
+                              ${order.status.toLowerCase() === "outfordelivery" ? "bg-purple-50 text-purple-700 border-purple-150" : ""}
                               ${["assigned", "accepted"].includes(order.status.toLowerCase()) ? "bg-blue-50 text-blue-700 border-blue-150" : ""}
                             `}>
                               {order.status}
@@ -897,7 +897,7 @@ const LiveTracking = () => {
                   <div className="pt-3 border-t border-slate-100 space-y-2.5">
                     <label className="text-[9px] uppercase font-bold text-slate-400 block">Dispatch Status Control</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {["pending", "assigned", "accepted", "dispatched", "delivered"].map(st => (
+                      {["pending", "assigned", "accepted", "outfordelivery", "delivered"].map(st => (
                         <button
                           key={st}
                           onClick={() => handleUpdateOrderStatus(selectedOrder._id, st)}
@@ -929,7 +929,7 @@ const LiveTracking = () => {
                         key={rider._id}
                         onClick={() => {
                           setSelectedRider(rider);
-                          if (rider.location?.coordinates?.[1] && rider.location?.coordinates?.[0]) {
+                          if (rider.location?.coordinates?.[1] !== undefined && rider.location?.coordinates?.[0] !== undefined) {
                             setFocusedLocation([rider.location.coordinates[1], rider.location.coordinates[0]]);
                           }
                         }}
