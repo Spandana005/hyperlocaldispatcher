@@ -1,14 +1,4 @@
-### Register User
-POST http://localhost:4000/api/common/register
-Content-Type: application/json
 
-{
-  "name": "karan",
-  "email": "karan123@gmail.com",
-  "password": "123456",
-  "role": "rider",
-  "phone": "9126547610"
-}
 
 ### login user
 POST  http://localhost:4000/api/common/login
